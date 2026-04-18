@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-sarah-franco.png";
 import type { OrderItem } from "@/types/order";
+import { generatePedidoPdf } from "@/lib/generatePedidoPdf";
 
 type PedidoRow = {
   id: string;
@@ -237,6 +238,7 @@ const PedidoDetail = ({
   );
   const [valor, setValor] = useState(pedido.valor_total?.toString() || "");
   const [obs, setObs] = useState(pedido.observacoes_admin || "");
+  const [exporting, setExporting] = useState(false);
 
   const subtotal = Object.values(valoresItens).reduce(
     (acc, v) => acc + (Number(v) || 0),
@@ -258,11 +260,30 @@ const PedidoDetail = ({
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-end bg-petrol/40 backdrop-blur-sm">
       <div className="flex w-full max-w-2xl flex-col overflow-y-auto bg-cream shadow-2xl">
-        <div className="sticky top-0 flex items-center justify-between border-b border-burgundy/15 bg-cream px-8 py-5">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-burgundy/15 bg-cream px-8 py-5">
           <p className="text-[0.7rem] uppercase tracking-[0.3em] text-burgundy">Detalhe do pedido</p>
-          <button onClick={onClose} className="text-xs uppercase tracking-[0.2em] text-petrol/60 hover:text-burgundy">
-            fechar ✕
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={async () => {
+                try {
+                  setExporting(true);
+                  generatePedidoPdf(pedido);
+                  toast.success("PDF gerado");
+                } catch (e: any) {
+                  toast.error("Erro ao gerar PDF: " + (e?.message || "desconhecido"));
+                } finally {
+                  setExporting(false);
+                }
+              }}
+              disabled={exporting}
+              className="border border-burgundy bg-burgundy px-4 py-2 text-[0.65rem] uppercase tracking-[0.25em] text-cream transition-colors hover:bg-burgundy-deep disabled:opacity-50"
+            >
+              {exporting ? "Gerando..." : "Baixar PDF"}
+            </button>
+            <button onClick={onClose} className="text-xs uppercase tracking-[0.2em] text-petrol/60 hover:text-burgundy">
+              fechar ✕
+            </button>
+          </div>
         </div>
 
         <div className="space-y-8 px-8 py-10">
