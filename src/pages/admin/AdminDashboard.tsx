@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-sarah-franco.png";
 import type { OrderItem } from "@/types/order";
+import { generatePedidoPdf } from "@/lib/generatePedidoPdf";
 
 type PedidoRow = {
   id: string;
