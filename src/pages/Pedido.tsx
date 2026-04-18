@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo-sarah-franco.png";
 import {
   CustomerData,
@@ -12,6 +14,21 @@ import {
   DoceItem,
   BoloItem,
 } from "@/types/order";
+
+const pedidoSchema = z.object({
+  nome_cliente: z.string().trim().min(1).max(120),
+  telefone: z.string().trim().min(8).max(30),
+  endereco: z.string().trim().min(1).max(300),
+  data_evento: z.string().min(1),
+  horario_evento: z.string().min(1),
+  tipo_logistica: z.enum(["entrega", "retirada"]),
+  endereco_entrega: z.string().max(300).nullable(),
+  data_entrega: z.string().nullable(),
+  horario_entrega: z.string().nullable(),
+  data_retirada: z.string().nullable(),
+  horario_retirada: z.string().nullable(),
+  itens: z.array(z.any()).min(1),
+});
 
 const stepLabels = ["Você", "Evento", "Entrega", "Pedido", "Revisão"];
 
@@ -85,21 +102,40 @@ const Pedido = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const submit = () => {
-    // Mock: salvar localmente; depois conectar ao Lovable Cloud
+  const [enviando, setEnviando] = useState(false);
+
+  const submit = async () => {
     const payload = {
-      cliente,
-      evento,
-      logistica,
+      nome_cliente: cliente.nome,
+      telefone: cliente.telefone,
+      endereco: cliente.endereco,
+      data_evento: evento.data,
+      horario_evento: evento.horario,
+      tipo_logistica: logistica.modo,
+      endereco_entrega: logistica.modo === "entrega" ? logistica.entrega?.endereco ?? null : null,
+      data_entrega: logistica.modo === "entrega" ? logistica.entrega?.data ?? null : null,
+      horario_entrega: logistica.modo === "entrega" ? logistica.entrega?.horario ?? null : null,
+      data_retirada: logistica.modo === "retirada" ? logistica.retirada?.data ?? null : null,
+      horario_retirada: logistica.modo === "retirada" ? logistica.retirada?.horario ?? null : null,
       itens,
-      status: "novo" as const,
-      criadoEm: new Date().toISOString(),
     };
-    const stored = JSON.parse(localStorage.getItem("sf_pedidos") || "[]");
-    stored.push(payload);
-    localStorage.setItem("sf_pedidos", JSON.stringify(stored));
-    toast.success("Pedido enviado! Entraremos em contato em breve.");
-    setTimeout(() => navigate("/"), 1500);
+
+    const parsed = pedidoSchema.safeParse(payload);
+    if (!parsed.success) {
+      toast.error("Verifique os dados do pedido antes de enviar.");
+      return;
+    }
+
+    setEnviando(true);
+    try {
+      const { error } = await supabase.from("pedidos").insert(parsed.data as any);
+      if (error) throw error;
+      toast.success("Pedido enviado! Entraremos em contato em breve.");
+      setTimeout(() => navigate("/"), 1500);
+    } catch (err: any) {
+      toast.error("Erro ao enviar pedido: " + (err.message || "tente novamente"));
+      setEnviando(false);
+    }
   };
 
   return (
@@ -209,9 +245,10 @@ const Pedido = () => {
                 <button
                   type="button"
                   onClick={submit}
-                  className="group inline-flex items-center gap-3 bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream transition-all duration-500 hover:bg-burgundy-deep"
+                  disabled={enviando}
+                  className="group inline-flex items-center gap-3 bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream transition-all duration-500 hover:bg-burgundy-deep disabled:opacity-50"
                 >
-                  Enviar pedido
+                  {enviando ? "Enviando..." : "Enviar pedido"}
                   <span className="transition-transform duration-500 group-hover:translate-x-1">
                     →
                   </span>
