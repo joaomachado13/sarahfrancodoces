@@ -212,7 +212,7 @@ const AdminDashboard = () => {
           pedido={selected}
           onClose={() => setSelected(null)}
           onStatus={(s) => updateStatus(selected.id, s)}
-          onSaveOrcamento={(v, obs) => updateValor(selected.id, v, obs)}
+          onSaveOrcamento={(v, obs, itens) => updateValor(selected.id, v, obs, itens)}
         />
       )}
     </div>
