@@ -70,10 +70,20 @@ const AdminDashboard = () => {
     if (selected?.id === id) setSelected({ ...selected, status });
   };
 
-  const updateValor = async (id: string, valor_total: number | null, observacoes_admin: string | null) => {
+  const updateValor = async (
+    id: string,
+    valor_total: number | null,
+    observacoes_admin: string | null,
+    itens: OrderItem[]
+  ) => {
     const { error } = await supabase
       .from("pedidos")
-      .update({ valor_total, observacoes_admin })
+      .update({
+        valor_total,
+        observacoes_admin,
+        itens: itens as any,
+        status: "em_orcamento",
+      })
       .eq("id", id);
     if (error) {
       toast.error("Erro: " + error.message);
@@ -81,9 +91,14 @@ const AdminDashboard = () => {
     }
     toast.success("Orçamento salvo");
     setPedidos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, valor_total, observacoes_admin } : p))
+      prev.map((p) =>
+        p.id === id
+          ? { ...p, valor_total, observacoes_admin, itens, status: "em_orcamento" }
+          : p
+      )
     );
-    if (selected?.id === id) setSelected({ ...selected, valor_total, observacoes_admin });
+    if (selected?.id === id)
+      setSelected({ ...selected, valor_total, observacoes_admin, itens, status: "em_orcamento" });
   };
 
   return (
