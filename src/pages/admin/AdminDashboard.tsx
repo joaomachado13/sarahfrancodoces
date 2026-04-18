@@ -238,6 +238,7 @@ const PedidoDetail = ({
   );
   const [valor, setValor] = useState(pedido.valor_total?.toString() || "");
   const [obs, setObs] = useState(pedido.observacoes_admin || "");
+  const [exporting, setExporting] = useState(false);
 
   const subtotal = Object.values(valoresItens).reduce(
     (acc, v) => acc + (Number(v) || 0),
