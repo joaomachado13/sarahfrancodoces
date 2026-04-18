@@ -27,12 +27,12 @@ export const Navbar = () => {
           : "bg-transparent"
       }`}
     >
-      <div className="container-narrow flex h-20 items-center justify-between">
-        <a href="#top" className="flex items-center gap-3">
+      <div className="container-narrow flex h-24 items-center justify-between">
+        <a href="#top" className="flex items-center gap-3 py-2 pr-4">
           <img
             src={logo}
             alt="Sarah Franco Doces & Bolos"
-            className="h-10 w-auto opacity-90"
+            className="h-16 w-auto opacity-95 md:h-20"
             style={{ filter: "brightness(0.4) sepia(1) hue-rotate(-20deg) saturate(6)" }}
           />
         </a>
@@ -51,7 +51,7 @@ export const Navbar = () => {
 
         <Link
           to="/pedido"
-          className="group inline-flex items-center gap-2 rounded-sm bg-burgundy px-5 py-2.5 text-xs uppercase tracking-[0.2em] text-cream transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
+          className="group inline-flex items-center gap-2 rounded-2xl bg-burgundy px-5 py-2.5 text-xs uppercase tracking-[0.2em] text-cream transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
         >
           Fazer pedido
           <span className="transition-transform duration-500 group-hover:translate-x-1">→</span>

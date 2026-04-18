@@ -16,7 +16,7 @@ export const CtaFooter = () => {
           </p>
           <Link
             to="/pedido"
-            className="group mt-10 inline-flex items-center gap-3 bg-burgundy px-10 py-5 text-xs uppercase tracking-[0.3em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
+            className="group mt-10 inline-flex items-center gap-3 rounded-2xl bg-burgundy px-10 py-5 text-xs uppercase tracking-[0.3em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
           >
             Iniciar meu pedido
             <span className="transition-transform duration-500 group-hover:translate-x-1">→</span>

@@ -29,7 +29,7 @@ export const Hero = () => {
           <div className="mt-10 flex flex-wrap items-center gap-5">
             <Link
               to="/pedido"
-              className="group inline-flex items-center gap-3 rounded-sm bg-burgundy px-8 py-4 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
+              className="group inline-flex items-center gap-3 rounded-2xl bg-burgundy px-8 py-4 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
             >
               Solicitar orçamento
               <span className="transition-transform duration-500 group-hover:translate-x-1">→</span>
@@ -51,15 +51,15 @@ export const Hero = () => {
 
         <div className="relative md:col-span-6">
           <div className="relative animate-fade-in">
-            <div className="absolute -inset-4 rounded-sm border border-burgundy/20" />
+            <div className="absolute -inset-4 rounded-2xl border border-burgundy/20" />
             <img
               src={heroImg}
               alt="Bolo de andares bordô artesanal Sarah Franco"
-              className="relative h-[520px] w-full rounded-sm object-cover shadow-elegant md:h-[640px]"
+              className="relative h-[520px] w-full rounded-2xl object-cover shadow-elegant md:h-[640px]"
               width={1080}
               height={1920}
             />
-            <div className="absolute -bottom-6 -left-6 hidden bg-cream px-6 py-4 shadow-soft md:block">
+            <div className="absolute -bottom-6 -left-6 hidden rounded-2xl bg-cream px-6 py-4 shadow-soft md:block">
               <p className="font-script text-2xl text-burgundy">Sarah Franco</p>
               <p className="text-[0.65rem] uppercase tracking-[0.3em] text-petrol/70">
                 Doces & Bolos
