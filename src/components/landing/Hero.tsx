@@ -29,7 +29,7 @@ export const Hero = () => {
           <div className="mt-10 flex flex-wrap items-center gap-5">
             <Link
               to="/pedido"
-              className="group inline-flex items-center gap-3 rounded-sm bg-burgundy px-8 py-4 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
+              className="group inline-flex items-center gap-3 rounded-2xl bg-burgundy px-8 py-4 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
             >
               Solicitar orçamento
               <span className="transition-transform duration-500 group-hover:translate-x-1">→</span>
