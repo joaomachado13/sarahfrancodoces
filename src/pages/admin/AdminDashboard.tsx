@@ -228,10 +228,32 @@ const PedidoDetail = ({
   pedido: PedidoRow;
   onClose: () => void;
   onStatus: (s: PedidoRow["status"]) => void;
-  onSaveOrcamento: (valor: number | null, obs: string | null) => void;
+  onSaveOrcamento: (valor: number | null, obs: string | null, itens: OrderItem[]) => void;
 }) => {
+  const [valoresItens, setValoresItens] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      pedido.itens.map((it) => [it.id, (it as any).valor != null ? String((it as any).valor) : ""])
+    )
+  );
   const [valor, setValor] = useState(pedido.valor_total?.toString() || "");
   const [obs, setObs] = useState(pedido.observacoes_admin || "");
+
+  const subtotal = Object.values(valoresItens).reduce(
+    (acc, v) => acc + (Number(v) || 0),
+    0
+  );
+
+  const aplicarSubtotal = () => {
+    setValor(subtotal ? subtotal.toFixed(2) : "");
+  };
+
+  const salvar = () => {
+    const itensComValor = pedido.itens.map((it) => ({
+      ...it,
+      valor: valoresItens[it.id] ? Number(valoresItens[it.id]) : null,
+    })) as OrderItem[];
+    onSaveOrcamento(valor ? Number(valor) : null, obs || null, itensComValor);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-end bg-petrol/40 backdrop-blur-sm">
@@ -280,7 +302,7 @@ const PedidoDetail = ({
           </Block>
 
           <Block title={`Itens (${pedido.itens.length})`}>
-            <ul className="space-y-4">
+            <ul className="space-y-5">
               {pedido.itens.map((it, i) => (
                 <li key={it.id} className="border-l-2 border-burgundy pl-4">
                   <p className="text-[0.65rem] uppercase tracking-[0.25em] text-burgundy">
@@ -299,6 +321,25 @@ const PedidoDetail = ({
                       {it.observacoes && <p className="text-petrol/60">Obs: {it.observacoes}</p>}
                     </div>
                   )}
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="text-[0.6rem] uppercase tracking-[0.2em] text-petrol/50">
+                      Valor
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-petrol/60">R$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={valoresItens[it.id] || ""}
+                        onChange={(e) =>
+                          setValoresItens((prev) => ({ ...prev, [it.id]: e.target.value }))
+                        }
+                        placeholder="0,00"
+                        className="w-28 border border-burgundy/20 bg-background px-2 py-1.5 text-sm text-petrol focus:border-burgundy focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -324,20 +365,30 @@ const PedidoDetail = ({
 
           <Block title="Orçamento">
             <div className="space-y-4">
-              <label className="block">
-                <span className="mb-2 block text-[0.65rem] uppercase tracking-[0.2em] text-petrol/60">
-                  Valor total (R$)
-                </span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={valor}
-                  onChange={(e) => setValor(e.target.value)}
-                  className="w-full border border-burgundy/20 bg-background px-4 py-3 text-sm text-petrol focus:border-burgundy focus:outline-none"
-                  placeholder="0,00"
-                />
-              </label>
+              <div className="flex items-end gap-3">
+                <label className="block flex-1">
+                  <span className="mb-2 block text-[0.65rem] uppercase tracking-[0.2em] text-petrol/60">
+                    Valor total (R$)
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={valor}
+                    onChange={(e) => setValor(e.target.value)}
+                    className="w-full border border-burgundy/20 bg-background px-4 py-3 text-sm text-petrol focus:border-burgundy focus:outline-none"
+                    placeholder="0,00"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={aplicarSubtotal}
+                  className="border border-burgundy/30 px-3 py-3 text-[0.6rem] uppercase tracking-[0.2em] text-burgundy hover:bg-burgundy hover:text-cream"
+                  title="Somar valores dos itens"
+                >
+                  Σ R$ {subtotal.toFixed(2)}
+                </button>
+              </div>
               <label className="block">
                 <span className="mb-2 block text-[0.65rem] uppercase tracking-[0.2em] text-petrol/60">
                   Observações internas
@@ -351,11 +402,14 @@ const PedidoDetail = ({
                 />
               </label>
               <button
-                onClick={() => onSaveOrcamento(valor ? Number(valor) : null, obs || null)}
+                onClick={salvar}
                 className="bg-burgundy px-6 py-3 text-xs uppercase tracking-[0.25em] text-cream transition-colors hover:bg-burgundy-deep"
               >
                 Salvar orçamento
               </button>
+              <p className="text-[0.65rem] text-petrol/50">
+                Ao salvar, o status é atualizado automaticamente para "Em orçamento".
+              </p>
             </div>
           </Block>
         </div>
