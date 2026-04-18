@@ -245,9 +245,10 @@ const Pedido = () => {
                 <button
                   type="button"
                   onClick={submit}
-                  className="group inline-flex items-center gap-3 bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream transition-all duration-500 hover:bg-burgundy-deep"
+                  disabled={enviando}
+                  className="group inline-flex items-center gap-3 bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream transition-all duration-500 hover:bg-burgundy-deep disabled:opacity-50"
                 >
-                  Enviar pedido
+                  {enviando ? "Enviando..." : "Enviar pedido"}
                   <span className="transition-transform duration-500 group-hover:translate-x-1">
                     →
                   </span>
