@@ -53,7 +53,7 @@
     --input: 28 35% 84%;
     --ring: 352 65% 32%;
 
-    --radius: 0.25rem;
+    --radius: 1rem;
 
     /* Gradients & shadows */
     --gradient-hero: radial-gradient(ellipse at top right, hsl(28 65% 94% / 0.6), transparent 60%),
