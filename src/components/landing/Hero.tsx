@@ -51,15 +51,15 @@ export const Hero = () => {
 
         <div className="relative md:col-span-6">
           <div className="relative animate-fade-in">
-            <div className="absolute -inset-4 rounded-sm border border-burgundy/20" />
+            <div className="absolute -inset-4 rounded-2xl border border-burgundy/20" />
             <img
               src={heroImg}
               alt="Bolo de andares bordô artesanal Sarah Franco"
-              className="relative h-[520px] w-full rounded-sm object-cover shadow-elegant md:h-[640px]"
+              className="relative h-[520px] w-full rounded-2xl object-cover shadow-elegant md:h-[640px]"
               width={1080}
               height={1920}
             />
-            <div className="absolute -bottom-6 -left-6 hidden bg-cream px-6 py-4 shadow-soft md:block">
+            <div className="absolute -bottom-6 -left-6 hidden rounded-2xl bg-cream px-6 py-4 shadow-soft md:block">
               <p className="font-script text-2xl text-burgundy">Sarah Franco</p>
               <p className="text-[0.65rem] uppercase tracking-[0.3em] text-petrol/70">
                 Doces & Bolos
