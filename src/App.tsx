@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import Pedido from "./pages/Pedido.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import AdminLogin from "./pages/admin/AdminLogin.tsx";
+import AdminDashboard from "./pages/admin/AdminDashboard.tsx";
+import { RequireAdmin } from "./components/admin/RequireAdmin.tsx";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +21,15 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/pedido" element={<Pedido />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route
+            path="/admin/pedidos"
+            element={
+              <RequireAdmin>
+                <AdminDashboard />
+              </RequireAdmin>
+            }
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
