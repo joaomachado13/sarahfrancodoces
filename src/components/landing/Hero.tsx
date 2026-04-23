@@ -15,7 +15,7 @@ export const Hero = () => {
         <div className="animate-fade-up min-w-0 w-full max-w-2xl mx-auto text-center lg:col-span-6 lg:mx-0 lg:max-w-none lg:text-left">
           <span className="eyebrow">Confeitaria artesanal</span>
 
-          <h1 className="mt-5 mx-auto font-serif text-[2rem] font-medium leading-[1.15] tracking-tight text-petrol text-balance sm:mt-6 sm:text-[2.4rem] md:max-w-[20ch] md:text-[2.8rem] lg:mx-0 lg:max-w-[14ch] lg:text-[3.25rem] lg:leading-[1.1] xl:max-w-[15ch] xl:text-[3.75rem]">
+          <h1 className="mt-5 mx-auto font-serif text-[2rem] font-medium leading-[1.25] tracking-tight text-petrol sm:mt-6 sm:text-[2.4rem] md:max-w-[20ch] md:text-[2.8rem] md:leading-[1.2] lg:mx-0 lg:max-w-[14ch] lg:text-[3.25rem] lg:leading-[1.2] xl:max-w-[15ch] xl:text-[3.75rem]">
             Doces personalizados feitos sob medida para o seu{" "}
             <span className="font-script font-normal text-burgundy">evento</span>
           </h1>
