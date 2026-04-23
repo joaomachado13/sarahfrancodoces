@@ -2,3 +2,6 @@ project_id = "utvptfnpqqhnrmccywgy"
 
 [functions.send-pedido-email]
 verify_jwt = false
+
+[functions.sync-pedido-sheets]
+verify_jwt = false
