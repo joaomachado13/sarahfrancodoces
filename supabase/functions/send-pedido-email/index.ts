@@ -173,7 +173,7 @@ Acesse o sistema para criar o orçamento.`;
       },
       body: JSON.stringify({
         from: "Sarah Franco <onboarding@resend.dev>",
-        to: ["sarahalfr@hotmail.com", "jlammachado38@gmail.com"],
+        to: ["jlammachado38@gmail.com"],
         subject: "Novo pedido recebido 🍰",
         html,
         text,
