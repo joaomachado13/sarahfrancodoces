@@ -371,10 +371,10 @@ const StepLogistics = ({
           key={mode}
           type="button"
           onClick={() => setLogistica({ ...logistica, modo: mode })}
-          className={`border px-6 py-5 text-sm uppercase tracking-[0.2em] transition-all ${
+          className={`rounded-xl border px-6 py-5 text-sm font-medium uppercase tracking-[0.2em] transition-all ${
             logistica.modo === mode
-              ? "border-burgundy bg-burgundy text-cream"
-              : "border-burgundy/25 bg-background text-petrol/70 hover:border-burgundy"
+              ? "border-burgundy bg-burgundy text-cream shadow-soft"
+              : "border-burgundy/30 bg-background text-petrol hover:border-burgundy hover:bg-burgundy/5"
           }`}
         >
           {mode}
