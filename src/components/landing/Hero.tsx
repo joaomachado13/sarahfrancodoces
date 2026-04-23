@@ -15,15 +15,12 @@ export const Hero = () => {
         <div className="animate-fade-up md:col-span-6">
           <span className="eyebrow">Confeitaria artesanal</span>
 
-          <h1 className="mt-6 font-serif text-5xl font-medium leading-[1.08] tracking-tight text-petrol md:text-7xl md:leading-[1.05]">
-            Doces personalizados
-            <br />
-            feitos sob medida para o
-            <br />
-            seu <span className="font-script font-normal text-burgundy">evento</span>
+          <h1 className="mt-6 font-serif text-[2.5rem] font-medium leading-[1.1] tracking-tight text-petrol sm:text-5xl md:text-7xl md:leading-[1.05]">
+            Doces personalizados feitos sob medida para o seu{" "}
+            <span className="font-script font-normal text-burgundy">evento</span>
           </h1>
 
-          <p className="mt-8 max-w-md text-base font-normal leading-[1.7] text-petrol/80 md:text-lg">
+          <p className="mt-6 max-w-md text-base font-normal leading-[1.7] text-petrol/80 md:mt-8 md:text-lg">
             Cada detalhe pensado para tornar o seu momento ainda mais especial.
             Brigadeiros gourmet, doces finos e bolos artesanais — exclusivos para você.
           </p>
