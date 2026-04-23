@@ -15,15 +15,15 @@ export const Hero = () => {
         <div className="animate-fade-up md:col-span-6">
           <span className="eyebrow">Confeitaria artesanal</span>
 
-          <h1 className="mt-6 font-serif text-5xl leading-[1.05] text-petrol md:text-7xl">
+          <h1 className="mt-6 font-serif text-5xl font-medium leading-[1.08] tracking-tight text-petrol md:text-7xl md:leading-[1.05]">
             Doces personalizados
             <br />
             feitos sob medida para o
             <br />
-            seu <span className="font-script text-burgundy">evento</span>
+            seu <span className="font-script font-normal text-burgundy">evento</span>
           </h1>
 
-          <p className="mt-8 max-w-md text-base leading-relaxed text-petrol/75 md:text-lg">
+          <p className="mt-8 max-w-md text-base font-normal leading-[1.7] text-petrol/80 md:text-lg">
             Cada detalhe pensado para tornar o seu momento ainda mais especial.
             Brigadeiros gourmet, doces finos e bolos artesanais — exclusivos para você.
           </p>
@@ -54,14 +54,20 @@ export const Hero = () => {
         <div className="relative md:col-span-6">
           <div className="relative animate-fade-in">
             <div className="absolute -inset-4 rounded-2xl border border-burgundy/20" />
-            <img
-              src={heroImg}
-              alt="Brigadeiros gourmet e docinhos finos artesanais Sarah Franco"
-              className="relative h-[520px] w-full rounded-2xl object-cover shadow-elegant md:h-[640px]"
-              width={1024}
-              height={1280}
-            />
-            <div className="absolute -bottom-6 -left-6 hidden rounded-2xl bg-cream px-6 py-4 shadow-soft md:block">
+            <div className="relative overflow-hidden rounded-2xl shadow-elegant">
+              <img
+                src={heroImg}
+                alt="Brigadeiros gourmet e docinhos finos artesanais Sarah Franco"
+                className="h-[520px] w-full object-cover md:h-[640px]"
+                width={1024}
+                height={1280}
+              />
+              {/* Subtle overlay for sophistication & contrast */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-burgundy-deep/35 via-burgundy-deep/5 to-transparent" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-petrol/15" />
+              <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-cream/10" />
+            </div>
+            <div className="absolute -bottom-6 -left-6 z-10 hidden rounded-2xl bg-cream px-6 py-4 shadow-soft md:block">
               <p className="font-script text-2xl text-burgundy">Sarah Franco</p>
               <p className="text-[0.65rem] uppercase tracking-[0.3em] text-petrol/70">
                 Doces & Bolos

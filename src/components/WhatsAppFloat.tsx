@@ -16,8 +16,9 @@ export const WhatsAppFloat = () => {
         Fale comigo no WhatsApp
       </span>
 
-      <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-elegant transition-all duration-300 group-hover:scale-110 group-hover:bg-[#1ebe5d] md:h-16 md:w-16">
-        <span className="absolute inset-0 animate-ping rounded-full bg-[#25D366] opacity-30" />
+      <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-elegant transition-all duration-300 animate-[wppFloat_2.8s_ease-in-out_infinite] group-hover:scale-[1.12] group-hover:bg-[#1ebe5d] group-hover:shadow-[0_18px_40px_-10px_rgba(37,211,102,0.55)] md:h-16 md:w-16">
+        <span className="absolute inset-0 animate-ping rounded-full bg-[#25D366] opacity-25" />
+        <span className="absolute -inset-1 rounded-full bg-[#25D366]/20 blur-md" />
         <MessageCircle className="relative h-7 w-7 md:h-8 md:w-8" fill="currentColor" strokeWidth={0} />
         <svg
           viewBox="0 0 32 32"
