@@ -27,7 +27,7 @@ export const CtaFooter = () => {
         {/* Contatos em destaque */}
         <div className="mx-auto mt-20 grid max-w-2xl gap-5 sm:grid-cols-2">
           <a
-            href="https://wa.me/5534984282198"
+            href="https://wa.me/5534984415936"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-4 rounded-2xl border border-burgundy/15 bg-cream/60 px-6 py-5 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-burgundy/40 hover:bg-cream hover:shadow-elegant"
@@ -39,7 +39,7 @@ export const CtaFooter = () => {
             </span>
             <div className="text-left">
               <p className="text-[0.65rem] uppercase tracking-[0.28em] text-petrol/60">WhatsApp</p>
-              <p className="font-serif text-xl text-burgundy">(34) 98428-2198</p>
+              <p className="font-serif text-xl text-burgundy">(34) 98441-5936</p>
             </div>
           </a>
 
