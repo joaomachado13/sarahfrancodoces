@@ -5,22 +5,22 @@ export const Hero = () => {
   return (
     <section
       id="top"
-      className="relative overflow-hidden bg-gradient-hero pt-32 pb-20 md:pt-40 md:pb-32"
+      className="relative overflow-hidden bg-gradient-hero pt-28 pb-16 md:pt-32 md:pb-20 lg:pt-40 lg:pb-32"
     >
       {/* Decorative seal */}
       <div className="pointer-events-none absolute -right-24 top-32 hidden h-[420px] w-[420px] rounded-full border border-burgundy/15 lg:block" />
       <div className="pointer-events-none absolute -right-10 top-48 hidden h-[280px] w-[280px] rounded-full border border-burgundy/10 lg:block" />
 
-      <div className="container-narrow relative grid gap-12 md:grid-cols-12 md:items-center md:gap-16">
-        <div className="animate-fade-up min-w-0 md:col-span-6">
+      <div className="container-narrow relative grid gap-10 md:gap-12 lg:grid-cols-12 lg:items-center lg:gap-16">
+        <div className="animate-fade-up min-w-0 max-w-2xl lg:col-span-6 lg:max-w-none">
           <span className="eyebrow">Confeitaria artesanal</span>
 
-          <h1 className="mt-6 font-serif text-[2rem] font-medium leading-[1.12] tracking-tight text-petrol [hyphens:auto] [overflow-wrap:break-word] sm:text-[2.5rem] md:text-6xl md:leading-[1.05] lg:text-7xl">
+          <h1 className="mt-5 max-w-[13ch] font-serif text-[1.95rem] font-medium leading-[1.1] tracking-tight text-petrol break-words sm:mt-6 sm:max-w-[14ch] sm:text-[2.45rem] md:max-w-[15ch] md:text-[3.35rem] lg:max-w-none lg:text-6xl lg:leading-[1.05] xl:text-7xl">
             Doces personalizados feitos sob medida para o seu{" "}
             <span className="font-script font-normal text-burgundy">evento</span>
           </h1>
 
-          <p className="mt-6 max-w-md text-base font-normal leading-[1.7] text-petrol/80 md:mt-8 md:text-lg">
+          <p className="mt-5 max-w-lg text-base font-normal leading-[1.7] text-petrol/80 md:mt-6 md:text-lg lg:mt-8">
             Cada detalhe pensado para tornar o seu momento ainda mais especial.
             Brigadeiros gourmet, doces finos e bolos artesanais — exclusivos para você.
           </p>
@@ -41,21 +41,21 @@ export const Hero = () => {
             </a>
           </div>
 
-          <div className="mt-16 grid grid-cols-3 gap-6 border-t border-burgundy/15 pt-8 max-w-md">
+          <div className="mt-12 grid max-w-md grid-cols-3 gap-4 border-t border-burgundy/15 pt-7 sm:gap-6 md:mt-14 md:max-w-lg md:pt-8">
             <Stat number="+500" label="Eventos" />
             <Stat number="100%" label="Sob medida" />
             <Stat number="5 anos" label="De arte" />
           </div>
         </div>
 
-        <div className="relative md:col-span-6">
+        <div className="relative mx-auto w-full max-w-xl lg:col-span-6 lg:max-w-none">
           <div className="relative animate-fade-in">
             <div className="absolute -inset-4 rounded-2xl border border-burgundy/20" />
             <div className="relative overflow-hidden rounded-2xl shadow-elegant">
               <img
                 src={heroImg}
                 alt="Brigadeiros gourmet e docinhos finos artesanais Sarah Franco"
-                className="h-[520px] w-full object-cover md:h-[640px]"
+                className="h-[430px] w-full object-cover sm:h-[520px] md:h-[560px] lg:h-[640px]"
                 width={1024}
                 height={1280}
               />
@@ -64,7 +64,7 @@ export const Hero = () => {
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-petrol/15" />
               <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-cream/10" />
             </div>
-            <div className="absolute -bottom-6 -left-6 z-10 hidden rounded-2xl bg-cream px-6 py-4 shadow-soft md:block">
+            <div className="absolute -bottom-6 -left-6 z-10 hidden rounded-2xl bg-cream px-6 py-4 shadow-soft lg:block">
               <p className="font-script text-2xl text-burgundy">Sarah Franco</p>
               <p className="text-[0.65rem] uppercase tracking-[0.3em] text-petrol/70">
                 Doces & Bolos
