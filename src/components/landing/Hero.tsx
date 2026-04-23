@@ -45,7 +45,7 @@ export const Hero = () => {
           <div className="mt-16 grid grid-cols-3 gap-6 border-t border-burgundy/15 pt-8 max-w-md">
             <Stat number="+500" label="Eventos" />
             <Stat number="100%" label="Sob medida" />
-            <Stat number="8 anos" label="De arte" />
+            <Stat number="5 anos" label="De arte" />
           </div>
         </div>
 
