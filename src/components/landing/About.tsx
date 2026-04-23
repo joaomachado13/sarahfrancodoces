@@ -30,7 +30,7 @@ export const About = () => {
           </h2>
 
           <p className="mt-8 text-base leading-relaxed text-petrol/75 md:text-lg">
-            Há mais de oito anos, Sarah Franco transforma momentos em
+            Há mais de cinco anos, Sarah Franco transforma momentos em
             memórias afetivas. Cada bolo é desenhado em conjunto com você,
             cada doce nasce de uma combinação única de sabores escolhida
             para o seu evento.
