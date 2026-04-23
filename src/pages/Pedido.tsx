@@ -480,17 +480,17 @@ const StepItems = ({
       {itens.map((item, idx) => (
         <div
           key={item.id}
-          className="border border-burgundy/15 bg-background p-6"
+          className="rounded-xl border border-burgundy/20 bg-background p-6 shadow-sm"
         >
           <div className="flex items-center justify-between">
-            <p className="text-[0.7rem] uppercase tracking-[0.3em] text-burgundy">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-burgundy">
               Item {idx + 1} — {item.tipo === "doce" ? "Doces" : "Bolo"}
             </p>
             {itens.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeItem(item.id)}
-                className="text-xs uppercase tracking-[0.2em] text-petrol/50 hover:text-burgundy"
+                className="rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-petrol/75 transition-colors hover:bg-burgundy/10 hover:text-burgundy"
               >
                 remover
               </button>
@@ -508,18 +508,18 @@ const StepItems = ({
       ))}
     </div>
 
-    <div className="grid grid-cols-2 gap-3 border-t border-burgundy/15 pt-6">
+    <div className="grid grid-cols-1 gap-3 border-t border-burgundy/15 pt-6 sm:grid-cols-2">
       <button
         type="button"
         onClick={() => setItens([...itens, newDoce()])}
-        className="border border-burgundy/30 px-6 py-4 text-xs uppercase tracking-[0.25em] text-burgundy transition-colors hover:bg-burgundy hover:text-cream"
+        className="rounded-xl border border-burgundy bg-burgundy/5 px-6 py-4 text-xs font-semibold uppercase tracking-[0.25em] text-burgundy transition-all hover:bg-burgundy hover:text-cream hover:shadow-soft"
       >
         + adicionar doce
       </button>
       <button
         type="button"
         onClick={() => setItens([...itens, newBolo()])}
-        className="border border-burgundy/30 px-6 py-4 text-xs uppercase tracking-[0.25em] text-burgundy transition-colors hover:bg-burgundy hover:text-cream"
+        className="rounded-xl border border-burgundy/40 bg-transparent px-6 py-4 text-xs font-semibold uppercase tracking-[0.25em] text-burgundy transition-all hover:border-burgundy hover:bg-burgundy hover:text-cream hover:shadow-soft"
       >
         + adicionar bolo
       </button>
