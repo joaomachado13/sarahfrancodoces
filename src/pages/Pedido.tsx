@@ -168,6 +168,10 @@ const Pedido = () => {
             <h1 className="mt-6 font-serif text-4xl leading-tight text-petrol md:text-5xl">
               Vamos montar seu <span className="font-script text-burgundy">pedido</span>
             </h1>
+            <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-petrol/70 md:text-base">
+              Descreva seu pedido do jeitinho que você imagina — quanto mais
+              detalhes, mais personalizado fica o seu orçamento.
+            </p>
           </div>
 
           {/* Stepper */}

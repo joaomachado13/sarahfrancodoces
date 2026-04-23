@@ -16,27 +16,29 @@ export const Hero = () => {
           <span className="eyebrow">Confeitaria artesanal</span>
 
           <h1 className="mt-6 font-serif text-5xl leading-[1.05] text-petrol md:text-7xl">
-            Cada doce,
+            Doces personalizados
             <br />
-            uma <span className="font-script text-burgundy">assinatura</span>
+            feitos sob medida para o
+            <br />
+            seu <span className="font-script text-burgundy">evento</span>
           </h1>
 
           <p className="mt-8 max-w-md text-base leading-relaxed text-petrol/75 md:text-lg">
-            Brigadeiros gourmet, docinhos finos e bolos artesanais 100% personalizados
-            para casamentos, aniversários e momentos que merecem ser eternizados em sabor.
+            Cada detalhe pensado para tornar o seu momento ainda mais especial.
+            Brigadeiros gourmet, doces finos e bolos artesanais — exclusivos para você.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-5">
             <Link
               to="/pedido"
-              className="group inline-flex items-center gap-3 rounded-2xl bg-burgundy px-8 py-4 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
+              className="group inline-flex items-center gap-3 rounded-2xl bg-burgundy px-8 py-4 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:-translate-y-0.5 hover:bg-burgundy-deep hover:shadow-elegant"
             >
-              Solicitar orçamento
+              Quero meu orçamento
               <span className="transition-transform duration-500 group-hover:translate-x-1">→</span>
             </Link>
             <a
               href="#especialidades"
-              className="text-xs uppercase tracking-[0.25em] text-petrol/70 underline-offset-8 hover:text-burgundy hover:underline"
+              className="text-xs uppercase tracking-[0.25em] text-petrol/70 underline-offset-8 transition-colors hover:text-burgundy hover:underline"
             >
               Conhecer especialidades
             </a>

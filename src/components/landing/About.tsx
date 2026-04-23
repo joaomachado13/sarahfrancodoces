@@ -1,9 +1,11 @@
 import sarahPortrait from "@/assets/sarah-portrait.jpg";
+import { useReveal } from "@/hooks/useReveal";
 
 export const About = () => {
+  const ref = useReveal<HTMLDivElement>();
   return (
     <section id="sobre" className="bg-cream py-24 md:py-32">
-      <div className="container-narrow grid gap-16 md:grid-cols-12 md:items-center">
+      <div ref={ref} className="container-narrow reveal grid gap-16 md:grid-cols-12 md:items-center">
         <div className="relative md:col-span-5">
           <div className="relative aspect-square w-full max-w-md mx-auto">
             <div className="absolute -inset-3 rounded-2xl border border-burgundy/20" />
