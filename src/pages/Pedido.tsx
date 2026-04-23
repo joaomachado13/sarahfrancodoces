@@ -591,7 +591,7 @@ const BoloFields = ({
           className={inputCls}
           value={item.tamanho}
           onChange={(e) => updateItem(item.id, { tamanho: e.target.value })}
-          placeholder="Ex: 2 andares, 30 fatias..."
+          placeholder="Ex: 30 fatias, 2kg, 1,5kg..."
         />
       </Field>
       <Field label="Massa">
