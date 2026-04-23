@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import heroImg from "@/assets/hero-cake.jpg";
+import heroImg from "@/assets/hero-doces.jpg";
 
 export const Hero = () => {
   return (
@@ -22,8 +22,8 @@ export const Hero = () => {
           </h1>
 
           <p className="mt-8 max-w-md text-base leading-relaxed text-petrol/75 md:text-lg">
-            Bolos e doces 100% personalizados para casamentos, aniversários
-            e momentos que merecem ser eternizados em sabor.
+            Brigadeiros gourmet, docinhos finos e bolos artesanais 100% personalizados
+            para casamentos, aniversários e momentos que merecem ser eternizados em sabor.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-5">
@@ -54,10 +54,10 @@ export const Hero = () => {
             <div className="absolute -inset-4 rounded-2xl border border-burgundy/20" />
             <img
               src={heroImg}
-              alt="Bolo de andares bordô artesanal Sarah Franco"
+              alt="Brigadeiros gourmet e docinhos finos artesanais Sarah Franco"
               className="relative h-[520px] w-full rounded-2xl object-cover shadow-elegant md:h-[640px]"
-              width={1080}
-              height={1920}
+              width={1024}
+              height={1280}
             />
             <div className="absolute -bottom-6 -left-6 hidden rounded-2xl bg-cream px-6 py-4 shadow-soft md:block">
               <p className="font-script text-2xl text-burgundy">Sarah Franco</p>
