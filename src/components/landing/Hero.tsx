@@ -16,8 +16,8 @@ export const Hero = () => {
           <span className="eyebrow">Confeitaria artesanal</span>
 
           <h1 className="mt-5 mx-auto font-serif text-[2rem] font-medium leading-[1.25] tracking-tight text-petrol sm:mt-6 sm:text-[2.4rem] md:max-w-[20ch] md:text-[2.8rem] md:leading-[1.2] lg:mx-0 lg:max-w-[14ch] lg:text-[3.25rem] lg:leading-[1.2] xl:max-w-[15ch] xl:text-[3.75rem]">
-            Doces personalizados feitos sob medida para o seu{" "}
-            <span className="font-script font-normal text-burgundy">evento</span>
+            Doces feitos sob medida para{" "}
+            <span className="font-script font-normal text-burgundy">você</span>
           </h1>
 
           <p className="mt-6 mx-auto max-w-lg text-base font-normal leading-[1.7] text-petrol/80 md:mt-8 md:text-lg lg:mx-0">
