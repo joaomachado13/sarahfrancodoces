@@ -11,24 +11,24 @@ export const Hero = () => {
       <div className="pointer-events-none absolute -right-24 top-32 hidden h-[420px] w-[420px] rounded-full border border-burgundy/15 lg:block" />
       <div className="pointer-events-none absolute -right-10 top-48 hidden h-[280px] w-[280px] rounded-full border border-burgundy/10 lg:block" />
 
-      <div className="container-narrow relative grid gap-10 md:gap-12 lg:grid-cols-12 lg:items-center lg:gap-16">
-        <div className="animate-fade-up min-w-0 max-w-2xl lg:col-span-6 lg:max-w-none">
+      <div className="container-narrow relative grid gap-12 md:gap-14 lg:grid-cols-12 lg:items-center lg:gap-16">
+        <div className="animate-fade-up min-w-0 w-full max-w-2xl mx-auto text-center lg:col-span-6 lg:mx-0 lg:max-w-none lg:text-left">
           <span className="eyebrow">Confeitaria artesanal</span>
 
-          <h1 className="mt-5 max-w-[13ch] font-serif text-[1.95rem] font-medium leading-[1.1] tracking-tight text-petrol break-words sm:mt-6 sm:max-w-[14ch] sm:text-[2.45rem] md:max-w-[15ch] md:text-[3.35rem] lg:max-w-none lg:text-6xl lg:leading-[1.05] xl:text-7xl">
+          <h1 className="mt-5 mx-auto font-serif text-[2rem] font-medium leading-[1.15] tracking-tight text-petrol text-balance sm:mt-6 sm:text-[2.6rem] md:max-w-[18ch] md:text-[3.35rem] lg:mx-0 lg:max-w-none lg:text-6xl lg:leading-[1.05] xl:text-7xl">
             Doces personalizados feitos sob medida para o seu{" "}
             <span className="font-script font-normal text-burgundy">evento</span>
           </h1>
 
-          <p className="mt-5 max-w-lg text-base font-normal leading-[1.7] text-petrol/80 md:mt-6 md:text-lg lg:mt-8">
+          <p className="mt-6 mx-auto max-w-lg text-base font-normal leading-[1.7] text-petrol/80 md:mt-8 md:text-lg lg:mx-0">
             Cada detalhe pensado para tornar o seu momento ainda mais especial.
             Brigadeiros gourmet, doces finos e bolos artesanais — exclusivos para você.
           </p>
 
-          <div className="mt-10 flex flex-wrap items-center gap-5">
+          <div className="mt-10 flex flex-col items-center gap-5 sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
             <Link
               to="/pedido"
-              className="group inline-flex items-center gap-3 rounded-2xl bg-burgundy px-8 py-4 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:-translate-y-0.5 hover:bg-burgundy-deep hover:shadow-elegant"
+              className="group inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-burgundy px-8 py-4 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:-translate-y-0.5 hover:bg-burgundy-deep hover:shadow-elegant sm:w-auto"
             >
               Quero meu orçamento
               <span className="transition-transform duration-500 group-hover:translate-x-1">→</span>
@@ -41,21 +41,21 @@ export const Hero = () => {
             </a>
           </div>
 
-          <div className="mt-12 grid max-w-md grid-cols-3 gap-4 border-t border-burgundy/15 pt-7 sm:gap-6 md:mt-14 md:max-w-lg md:pt-8">
+          <div className="mt-12 mx-auto grid max-w-md grid-cols-3 gap-4 border-t border-burgundy/15 pt-7 sm:gap-6 md:mt-14 md:max-w-lg md:pt-8 lg:mx-0">
             <Stat number="+500" label="Eventos" />
             <Stat number="100%" label="Sob medida" />
             <Stat number="5 anos" label="De arte" />
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-xl lg:col-span-6 lg:max-w-none">
+        <div className="relative mx-auto w-full max-w-md sm:max-w-lg md:max-w-xl lg:col-span-6 lg:max-w-none">
           <div className="relative animate-fade-in">
             <div className="absolute -inset-4 rounded-2xl border border-burgundy/20" />
             <div className="relative overflow-hidden rounded-2xl shadow-elegant">
               <img
                 src={heroImg}
                 alt="Brigadeiros gourmet e docinhos finos artesanais Sarah Franco"
-                className="h-[430px] w-full object-cover sm:h-[520px] md:h-[560px] lg:h-[640px]"
+                className="h-[380px] w-full object-cover sm:h-[480px] md:h-[560px] lg:h-[640px]"
                 width={1024}
                 height={1280}
               />
