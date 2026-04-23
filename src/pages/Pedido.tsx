@@ -130,6 +130,17 @@ const Pedido = () => {
     try {
       const { error } = await supabase.from("pedidos").insert(parsed.data as any);
       if (error) throw error;
+
+      // Dispara notificação por email — não bloqueia o fluxo se falhar
+      supabase.functions
+        .invoke("send-pedido-email", { body: parsed.data })
+        .then(({ error: emailError }) => {
+          if (emailError) {
+            console.error("Falha ao enviar email do pedido:", emailError);
+          }
+        })
+        .catch((e) => console.error("Falha ao enviar email do pedido:", e));
+
       toast.success("Pedido enviado! Entraremos em contato em breve.");
       setTimeout(() => navigate("/"), 1500);
     } catch (err: any) {
