@@ -14,7 +14,7 @@ export const About = () => {
               className="relative h-full w-full rounded-2xl object-cover shadow-elegant"
             />
             <div className="absolute -bottom-5 -left-5 hidden rounded-2xl bg-burgundy px-5 py-3 shadow-soft md:block">
-              <p className="font-script text-xl text-cream">há 8 anos</p>
+              <p className="font-script text-xl text-cream">há 5 anos</p>
               <p className="text-[0.6rem] uppercase tracking-[0.3em] text-cream/80">
                 criando memórias
               </p>
@@ -30,7 +30,7 @@ export const About = () => {
           </h2>
 
           <p className="mt-8 text-base leading-relaxed text-petrol/75 md:text-lg">
-            Há mais de oito anos, Sarah Franco transforma momentos em
+            Há mais de cinco anos, Sarah Franco transforma momentos em
             memórias afetivas. Cada bolo é desenhado em conjunto com você,
             cada doce nasce de uma combinação única de sabores escolhida
             para o seu evento.
