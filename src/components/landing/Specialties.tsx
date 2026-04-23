@@ -18,10 +18,13 @@ const items = [
   },
 ];
 
+import { useReveal } from "@/hooks/useReveal";
+
 export const Specialties = () => {
+  const ref = useReveal<HTMLDivElement>();
   return (
     <section id="especialidades" className="bg-background py-24 md:py-32">
-      <div className="container-narrow">
+      <div ref={ref} className="container-narrow reveal">
         <div className="mx-auto max-w-2xl text-center">
           <span className="eyebrow">Especialidades</span>
           <h2 className="mt-6 font-serif text-4xl leading-tight text-petrol md:text-5xl">

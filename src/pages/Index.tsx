@@ -4,6 +4,7 @@ import { About } from "@/components/landing/About";
 import { Specialties } from "@/components/landing/Specialties";
 import { Process } from "@/components/landing/Process";
 import { Testimonials } from "@/components/landing/Testimonials";
+import { InstagramGrid } from "@/components/landing/InstagramGrid";
 import { CtaFooter } from "@/components/landing/CtaFooter";
 
 const Index = () => {
@@ -15,6 +16,7 @@ const Index = () => {
       <Specialties />
       <Process />
       <Testimonials />
+      <InstagramGrid />
       <CtaFooter />
     </main>
   );
