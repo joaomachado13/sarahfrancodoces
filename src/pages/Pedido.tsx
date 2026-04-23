@@ -47,7 +47,7 @@ const Pedido = () => {
     entrega: { endereco: "", data: "", horario: "" },
     retirada: { data: "", horario: "" },
   });
-  const [itens, setItens] = useState<OrderItem[]>([newBolo()]);
+  const [itens, setItens] = useState<OrderItem[]>([newDoce()]);
 
   const updateItem = (id: string, patch: Partial<OrderItem>) => {
     setItens((prev) =>
