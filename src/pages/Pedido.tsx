@@ -199,7 +199,7 @@ const Pedido = () => {
           </ol>
 
           {/* Card */}
-          <div className="mt-12 border border-burgundy/15 bg-cream p-6 shadow-soft md:p-12">
+          <div className="mt-12 rounded-2xl border border-burgundy/15 bg-cream p-6 shadow-soft md:p-12">
             {step === 0 && (
               <StepCustomer cliente={cliente} setCliente={setCliente} />
             )}
@@ -230,7 +230,7 @@ const Pedido = () => {
                 type="button"
                 onClick={prev}
                 disabled={step === 0}
-                className="text-xs uppercase tracking-[0.25em] text-petrol/70 transition-colors hover:text-burgundy disabled:opacity-30"
+                className="text-xs uppercase tracking-[0.25em] text-petrol/80 transition-colors hover:text-burgundy disabled:opacity-30"
               >
                 ← Voltar
               </button>
@@ -238,7 +238,7 @@ const Pedido = () => {
                 <button
                   type="button"
                   onClick={next}
-                  className="group inline-flex items-center gap-3 bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream transition-all duration-500 hover:bg-burgundy-deep"
+                  className="group inline-flex items-center gap-3 rounded-full bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
                 >
                   Continuar
                   <span className="transition-transform duration-500 group-hover:translate-x-1">
@@ -250,7 +250,7 @@ const Pedido = () => {
                   type="button"
                   onClick={submit}
                   disabled={enviando}
-                  className="group inline-flex items-center gap-3 bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream transition-all duration-500 hover:bg-burgundy-deep disabled:opacity-50"
+                  className="group inline-flex items-center gap-3 rounded-full bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant disabled:opacity-50"
                 >
                   {enviando ? "Enviando..." : "Enviar pedido"}
                   <span className="transition-transform duration-500 group-hover:translate-x-1">
