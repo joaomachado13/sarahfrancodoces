@@ -7,6 +7,27 @@ import logo from "@/assets/logo-sarah-franco.png";
 import type { OrderItem } from "@/types/order";
 import { generatePedidoPdf } from "@/lib/generatePedidoPdf";
 
+const syncToSheets = (pedido: PedidoRow) => {
+  supabase.functions
+    .invoke("sync-pedido-sheets", {
+      body: {
+        id: pedido.id,
+        nome_cliente: pedido.nome_cliente,
+        telefone: pedido.telefone,
+        tipo_logistica: pedido.tipo_logistica,
+        data_evento: pedido.data_evento,
+        itens: pedido.itens,
+        status: pedido.status,
+        observacoes_admin: pedido.observacoes_admin,
+        created_at: pedido.created_at,
+      },
+    })
+    .then(({ error }) => {
+      if (error) console.error("Falha ao sincronizar com Sheets:", error);
+    })
+    .catch((e) => console.error("Falha ao sincronizar com Sheets:", e));
+};
+
 type PedidoRow = {
   id: string;
   nome_cliente: string;
@@ -67,6 +88,8 @@ const AdminDashboard = () => {
       return;
     }
     toast.success("Status atualizado");
+    const updated = pedidos.find((p) => p.id === id);
+    if (updated) syncToSheets({ ...updated, status });
     setPedidos((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)));
     if (selected?.id === id) setSelected({ ...selected, status });
   };
@@ -91,6 +114,16 @@ const AdminDashboard = () => {
       return;
     }
     toast.success("Orçamento salvo");
+    const base = pedidos.find((p) => p.id === id);
+    if (base) {
+      syncToSheets({
+        ...base,
+        valor_total,
+        observacoes_admin,
+        itens,
+        status: "em_orcamento",
+      });
+    }
     setPedidos((prev) =>
       prev.map((p) =>
         p.id === id

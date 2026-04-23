@@ -128,7 +128,11 @@ const Pedido = () => {
 
     setEnviando(true);
     try {
-      const { error } = await supabase.from("pedidos").insert(parsed.data as any);
+      const { data: inserted, error } = await supabase
+        .from("pedidos")
+        .insert(parsed.data as any)
+        .select()
+        .single();
       if (error) throw error;
 
       // Dispara notificação por email — não bloqueia o fluxo se falhar
@@ -140,6 +144,30 @@ const Pedido = () => {
           }
         })
         .catch((e) => console.error("Falha ao enviar email do pedido:", e));
+
+      // Sincroniza com Google Sheets — não bloqueia o fluxo se falhar
+      if (inserted) {
+        supabase.functions
+          .invoke("sync-pedido-sheets", {
+            body: {
+              id: inserted.id,
+              nome_cliente: inserted.nome_cliente,
+              telefone: inserted.telefone,
+              tipo_logistica: inserted.tipo_logistica,
+              data_evento: inserted.data_evento,
+              itens: inserted.itens,
+              status: inserted.status,
+              observacoes_admin: inserted.observacoes_admin,
+              created_at: inserted.created_at,
+            },
+          })
+          .then(({ error: sheetsError }) => {
+            if (sheetsError) {
+              console.error("Falha ao sincronizar com Sheets:", sheetsError);
+            }
+          })
+          .catch((e) => console.error("Falha ao sincronizar com Sheets:", e));
+      }
 
       toast.success("Pedido enviado! Entraremos em contato em breve.");
       setTimeout(() => navigate("/"), 1500);
