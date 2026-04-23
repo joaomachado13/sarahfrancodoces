@@ -11,11 +11,11 @@ export const Hero = () => {
       <div className="pointer-events-none absolute -right-24 top-32 hidden h-[420px] w-[420px] rounded-full border border-burgundy/15 lg:block" />
       <div className="pointer-events-none absolute -right-10 top-48 hidden h-[280px] w-[280px] rounded-full border border-burgundy/10 lg:block" />
 
-      <div className="container-narrow relative grid gap-16 md:grid-cols-12 md:items-center">
-        <div className="animate-fade-up md:col-span-6">
+      <div className="container-narrow relative grid gap-12 md:grid-cols-12 md:items-center md:gap-16">
+        <div className="animate-fade-up min-w-0 md:col-span-6">
           <span className="eyebrow">Confeitaria artesanal</span>
 
-          <h1 className="mt-6 font-serif text-[2.5rem] font-medium leading-[1.1] tracking-tight text-petrol sm:text-5xl md:text-7xl md:leading-[1.05]">
+          <h1 className="mt-6 font-serif text-[2rem] font-medium leading-[1.12] tracking-tight text-petrol [hyphens:auto] [overflow-wrap:break-word] sm:text-[2.5rem] md:text-6xl md:leading-[1.05] lg:text-7xl">
             Doces personalizados feitos sob medida para o seu{" "}
             <span className="font-script font-normal text-burgundy">evento</span>
           </h1>
