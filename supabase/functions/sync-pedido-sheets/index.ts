@@ -8,8 +8,8 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_sheets/v4";
 const SPREADSHEET_ID = "1QjhHO-ZhZ_Kfh20d7E5CyHcAMoLTPbAEBJOzSzwrv9A";
 
 const SHEETS = {
-  novo: "Novos Pedidos",
-  em_orcamento: "Em Orçamento",
+  novo: "Novos_Pedidos",
+  em_orcamento: "Em_Orcamento",
   finalizado: "Finalizados",
 } as const;
 
