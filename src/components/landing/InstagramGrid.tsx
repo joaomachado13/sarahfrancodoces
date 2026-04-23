@@ -1,17 +1,19 @@
 import { Instagram } from "lucide-react";
 import { useReveal } from "@/hooks/useReveal";
-import sweets from "@/assets/sweets.jpg";
-import cake from "@/assets/cake-detail.jpg";
-import hero from "@/assets/hero-doces.jpg";
-import portrait from "@/assets/sarah-portrait.jpg";
+import insta1 from "@/assets/insta-1.jpg";
+import insta2 from "@/assets/insta-2.jpg";
+import insta3 from "@/assets/insta-3.jpg";
+import insta4 from "@/assets/insta-4.jpg";
+import insta5 from "@/assets/insta-5.jpg";
+import insta6 from "@/assets/insta-6.jpg";
 
 const tiles = [
-  { img: sweets, alt: "Doces finos artesanais" },
-  { img: cake, alt: "Bolo artesanal" },
-  { img: hero, alt: "Mesa de doces personalizada" },
-  { img: portrait, alt: "Sarah Franco confeiteira" },
-  { img: sweets, alt: "Brigadeiros gourmet" },
-  { img: cake, alt: "Detalhe de bolo decorado" },
+  { img: insta1, alt: "Mesa de doces decorada com flores e folhagens" },
+  { img: insta2, alt: "Cenário completo de festa com bolo e doces" },
+  { img: insta3, alt: "Docinhos finos com detalhes em dourado" },
+  { img: insta4, alt: "Decoração de festa azul com bolo e doces" },
+  { img: insta5, alt: "Bandeja de brigadeiros gourmet" },
+  { img: insta6, alt: "Sobremesa artesanal com morangos e chantilly" },
 ];
 
 export const InstagramGrid = () => {
