@@ -99,6 +99,10 @@ async function getSpreadsheet() {
   return data;
 }
 
+function quoteRange(title: string, cells: string): string {
+  return `'${title.replace(/'/g, "''")}'!${cells}`;
+}
+
 async function ensureSheetsExist() {
   const spreadsheet = await getSpreadsheet();
   const existingTitles: string[] = (spreadsheet.sheets || []).map(
@@ -126,7 +130,7 @@ async function ensureSheetsExist() {
 
   // Garantir cabeçalhos
   for (const title of Object.values(SHEETS)) {
-    const range = `${title}!A1:I1`;
+    const range = quoteRange(title, "A1:I1");
     const res = await fetch(`${GATEWAY_URL}/spreadsheets/${SPREADSHEET_ID}/values/${range}`, {
       headers: authHeaders(),
     });
@@ -150,7 +154,7 @@ async function ensureSheetsExist() {
 }
 
 async function findRowByPedidoId(sheetTitle: string, pedidoId: string): Promise<number | null> {
-  const range = `${sheetTitle}!A:A`;
+  const range = quoteRange(sheetTitle, "A:A");
   const res = await fetch(`${GATEWAY_URL}/spreadsheets/${SPREADSHEET_ID}/values/${range}`, {
     headers: authHeaders(),
   });
@@ -196,7 +200,7 @@ async function deleteRow(sheetTitle: string, rowNumber: number) {
 }
 
 async function appendRow(sheetTitle: string, row: (string | number)[]) {
-  const range = `${sheetTitle}!A:I`;
+  const range = quoteRange(sheetTitle, "A:I");
   const res = await fetch(
     `${GATEWAY_URL}/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
     {
