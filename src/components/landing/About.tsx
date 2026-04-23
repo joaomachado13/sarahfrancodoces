@@ -1,18 +1,24 @@
-import seal from "@/assets/seal-sarah-franco.png";
+import sarahPortrait from "@/assets/sarah-portrait.jpg";
 
 export const About = () => {
   return (
     <section id="sobre" className="bg-cream py-24 md:py-32">
       <div className="container-narrow grid gap-16 md:grid-cols-12 md:items-center">
         <div className="relative md:col-span-5">
-          <div className="aspect-square w-full max-w-md mx-auto bg-burgundy-deep flex items-center justify-center shadow-elegant">
+          <div className="relative aspect-square w-full max-w-md mx-auto">
+            <div className="absolute -inset-3 rounded-2xl border border-burgundy/20" />
             <img
-              src={seal}
-              alt="Selo Sarah Franco"
+              src={sarahPortrait}
+              alt="Sarah Franco, confeiteira-chefe"
               loading="lazy"
-              className="w-3/4"
-              style={{ filter: "brightness(0) invert(0.92) sepia(0.3)" }}
+              className="relative h-full w-full rounded-2xl object-cover shadow-elegant"
             />
+            <div className="absolute -bottom-5 -left-5 hidden rounded-2xl bg-burgundy px-5 py-3 shadow-soft md:block">
+              <p className="font-script text-xl text-cream">há 8 anos</p>
+              <p className="text-[0.6rem] uppercase tracking-[0.3em] text-cream/80">
+                criando memórias
+              </p>
+            </div>
           </div>
         </div>
 
