@@ -276,7 +276,7 @@ const Field = ({
   children: React.ReactNode;
 }) => (
   <label className="block">
-    <span className="mb-2 block text-[0.7rem] uppercase tracking-[0.25em] text-petrol/70">
+    <span className="mb-2 block text-[0.7rem] font-semibold uppercase tracking-[0.25em] text-petrol">
       {label}
     </span>
     {children}
@@ -284,7 +284,7 @@ const Field = ({
 );
 
 const inputCls =
-  "w-full border border-burgundy/20 bg-background px-4 py-3 text-sm text-petrol placeholder:text-petrol/40 transition-colors focus:border-burgundy focus:outline-none";
+  "w-full rounded-xl border border-burgundy/25 bg-background px-4 py-3 text-sm text-petrol placeholder:text-petrol/55 transition-colors focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/15";
 
 const StepCustomer = ({
   cliente,
