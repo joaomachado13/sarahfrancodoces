@@ -1,6 +1,14 @@
 import { MessageCircle } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 export const WhatsAppFloat = () => {
+  const { pathname } = useLocation();
+
+  // Esconde o botão em fluxos onde ele atrapalha (ex: formulário de pedido e admin)
+  if (pathname.startsWith("/pedido") || pathname.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <a
       href="https://wa.me/5534984415936"

@@ -47,7 +47,7 @@ const Pedido = () => {
     entrega: { endereco: "", data: "", horario: "" },
     retirada: { data: "", horario: "" },
   });
-  const [itens, setItens] = useState<OrderItem[]>([newBolo()]);
+  const [itens, setItens] = useState<OrderItem[]>([newDoce()]);
 
   const updateItem = (id: string, patch: Partial<OrderItem>) => {
     setItens((prev) =>
@@ -199,7 +199,7 @@ const Pedido = () => {
           </ol>
 
           {/* Card */}
-          <div className="mt-12 border border-burgundy/15 bg-cream p-6 shadow-soft md:p-12">
+          <div className="mt-12 rounded-2xl border border-burgundy/15 bg-cream p-6 shadow-soft md:p-12">
             {step === 0 && (
               <StepCustomer cliente={cliente} setCliente={setCliente} />
             )}
@@ -230,7 +230,7 @@ const Pedido = () => {
                 type="button"
                 onClick={prev}
                 disabled={step === 0}
-                className="text-xs uppercase tracking-[0.25em] text-petrol/70 transition-colors hover:text-burgundy disabled:opacity-30"
+                className="text-xs uppercase tracking-[0.25em] text-petrol/80 transition-colors hover:text-burgundy disabled:opacity-30"
               >
                 ← Voltar
               </button>
@@ -238,7 +238,7 @@ const Pedido = () => {
                 <button
                   type="button"
                   onClick={next}
-                  className="group inline-flex items-center gap-3 bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream transition-all duration-500 hover:bg-burgundy-deep"
+                  className="group inline-flex items-center gap-3 rounded-full bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
                 >
                   Continuar
                   <span className="transition-transform duration-500 group-hover:translate-x-1">
@@ -250,7 +250,7 @@ const Pedido = () => {
                   type="button"
                   onClick={submit}
                   disabled={enviando}
-                  className="group inline-flex items-center gap-3 bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream transition-all duration-500 hover:bg-burgundy-deep disabled:opacity-50"
+                  className="group inline-flex items-center gap-3 rounded-full bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant disabled:opacity-50"
                 >
                   {enviando ? "Enviando..." : "Enviar pedido"}
                   <span className="transition-transform duration-500 group-hover:translate-x-1">
@@ -276,7 +276,7 @@ const Field = ({
   children: React.ReactNode;
 }) => (
   <label className="block">
-    <span className="mb-2 block text-[0.7rem] uppercase tracking-[0.25em] text-petrol/70">
+    <span className="mb-2 block text-[0.7rem] font-semibold uppercase tracking-[0.25em] text-petrol">
       {label}
     </span>
     {children}
@@ -284,7 +284,7 @@ const Field = ({
 );
 
 const inputCls =
-  "w-full border border-burgundy/20 bg-background px-4 py-3 text-sm text-petrol placeholder:text-petrol/40 transition-colors focus:border-burgundy focus:outline-none";
+  "w-full rounded-xl border border-burgundy/25 bg-background px-4 py-3 text-sm text-petrol placeholder:text-petrol/55 transition-colors focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/15";
 
 const StepCustomer = ({
   cliente,
@@ -371,10 +371,10 @@ const StepLogistics = ({
           key={mode}
           type="button"
           onClick={() => setLogistica({ ...logistica, modo: mode })}
-          className={`border px-6 py-5 text-sm uppercase tracking-[0.2em] transition-all ${
+          className={`rounded-xl border px-6 py-5 text-sm font-medium uppercase tracking-[0.2em] transition-all ${
             logistica.modo === mode
-              ? "border-burgundy bg-burgundy text-cream"
-              : "border-burgundy/25 bg-background text-petrol/70 hover:border-burgundy"
+              ? "border-burgundy bg-burgundy text-cream shadow-soft"
+              : "border-burgundy/30 bg-background text-petrol hover:border-burgundy hover:bg-burgundy/5"
           }`}
         >
           {mode}
@@ -480,17 +480,17 @@ const StepItems = ({
       {itens.map((item, idx) => (
         <div
           key={item.id}
-          className="border border-burgundy/15 bg-background p-6"
+          className="rounded-xl border border-burgundy/20 bg-background p-6 shadow-sm"
         >
           <div className="flex items-center justify-between">
-            <p className="text-[0.7rem] uppercase tracking-[0.3em] text-burgundy">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-burgundy">
               Item {idx + 1} — {item.tipo === "doce" ? "Doces" : "Bolo"}
             </p>
             {itens.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeItem(item.id)}
-                className="text-xs uppercase tracking-[0.2em] text-petrol/50 hover:text-burgundy"
+                className="rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-petrol/75 transition-colors hover:bg-burgundy/10 hover:text-burgundy"
               >
                 remover
               </button>
@@ -508,18 +508,18 @@ const StepItems = ({
       ))}
     </div>
 
-    <div className="grid grid-cols-2 gap-3 border-t border-burgundy/15 pt-6">
+    <div className="grid grid-cols-1 gap-3 border-t border-burgundy/15 pt-6 sm:grid-cols-2">
       <button
         type="button"
         onClick={() => setItens([...itens, newDoce()])}
-        className="border border-burgundy/30 px-6 py-4 text-xs uppercase tracking-[0.25em] text-burgundy transition-colors hover:bg-burgundy hover:text-cream"
+        className="rounded-xl border border-burgundy bg-burgundy/5 px-6 py-4 text-xs font-semibold uppercase tracking-[0.25em] text-burgundy transition-all hover:bg-burgundy hover:text-cream hover:shadow-soft"
       >
         + adicionar doce
       </button>
       <button
         type="button"
         onClick={() => setItens([...itens, newBolo()])}
-        className="border border-burgundy/30 px-6 py-4 text-xs uppercase tracking-[0.25em] text-burgundy transition-colors hover:bg-burgundy hover:text-cream"
+        className="rounded-xl border border-burgundy/40 bg-transparent px-6 py-4 text-xs font-semibold uppercase tracking-[0.25em] text-burgundy transition-all hover:border-burgundy hover:bg-burgundy hover:text-cream hover:shadow-soft"
       >
         + adicionar bolo
       </button>
@@ -591,7 +591,7 @@ const BoloFields = ({
           className={inputCls}
           value={item.tamanho}
           onChange={(e) => updateItem(item.id, { tamanho: e.target.value })}
-          placeholder="Ex: 2 andares, 30 fatias..."
+          placeholder="Ex: 30 fatias, 2kg, 1,5kg..."
         />
       </Field>
       <Field label="Massa">
@@ -705,7 +705,7 @@ const SectionTitle = ({
 }) => (
   <div>
     <h2 className="font-serif text-3xl text-petrol">{title}</h2>
-    <p className="mt-2 text-sm text-petrol/60">{subtitle}</p>
+    <p className="mt-2 text-sm text-petrol/80">{subtitle}</p>
   </div>
 );
 
