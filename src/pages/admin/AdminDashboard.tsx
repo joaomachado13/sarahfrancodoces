@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { LayoutDashboard, BarChart3, Users, FileDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-sarah-franco.png";
@@ -8,7 +9,10 @@ import type { OrderItem } from "@/types/order";
 import { generatePedidoPdf } from "@/lib/generatePedidoPdf";
 import { generatePerformanceReportPdf } from "@/lib/report/generatePerformanceReportPdf";
 import type { PerformanceReportData } from "@/lib/report/types";
+import { AnalyticsTab } from "@/components/admin/analytics/AnalyticsTab";
+import { ClientesTab } from "@/components/admin/ClientesTab";
 
+/* ─── helpers ─── */
 const syncToSheets = (pedido: PedidoRow) => {
   supabase.functions
     .invoke("sync-pedido-sheets", {
@@ -30,7 +34,8 @@ const syncToSheets = (pedido: PedidoRow) => {
     .catch((e) => console.error("Falha ao sincronizar com Sheets:", e));
 };
 
-type PedidoRow = {
+/* ─── types ─── */
+export type PedidoRow = {
   id: string;
   nome_cliente: string;
   telefone: string;
@@ -56,13 +61,23 @@ const statusLabels = {
   finalizado: "Finalizado",
 } as const;
 
-const fmtMoney = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
+const fmtMoney = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
+type Tab = "pedidos" | "analises" | "clientes";
+
+const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
+  { id: "pedidos", label: "Pedidos", icon: LayoutDashboard },
+  { id: "analises", label: "Análises", icon: BarChart3 },
+  { id: "clientes", label: "Clientes", icon: Users },
+];
+
+/* ════════════════════════════════════════════════ */
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
   const [pedidos, setPedidos] = useState<PedidoRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>("pedidos");
   const [filter, setFilter] = useState<"todos" | PedidoRow["status"]>("todos");
   const [selected, setSelected] = useState<PedidoRow | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
@@ -73,22 +88,16 @@ const AdminDashboard = () => {
       .from("pedidos")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) {
-      toast.error("Erro ao carregar pedidos: " + error.message);
-    } else {
-      setPedidos((data as any) || []);
-    }
+    if (error) toast.error("Erro ao carregar pedidos: " + error.message);
+    else setPedidos((data as any) || []);
     setLoading(false);
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const filtered = filter === "todos" ? pedidos : pedidos.filter((p) => p.status === filter);
-  const finalizados = useMemo(() => pedidos.filter((pedido) => pedido.status === "finalizado").length, [pedidos]);
   const faturamento = useMemo(
-    () => pedidos.reduce((sum, pedido) => sum + Number(pedido.valor_total || 0), 0),
+    () => pedidos.reduce((s, p) => s + Number(p.valor_total || 0), 0),
     [pedidos]
   );
 
@@ -98,7 +107,6 @@ const AdminDashboard = () => {
       const { data, error } = await supabase.functions.invoke("generate-performance-report", {
         body: { monthsBack: 6 },
       });
-
       if (error) throw error;
       generatePerformanceReportPdf(data as PerformanceReportData);
       toast.success("Relatório gerado com sucesso");
@@ -111,10 +119,7 @@ const AdminDashboard = () => {
 
   const updateStatus = async (id: string, status: PedidoRow["status"]) => {
     const { error } = await supabase.from("pedidos").update({ status }).eq("id", id);
-    if (error) {
-      toast.error("Erro: " + error.message);
-      return;
-    }
+    if (error) { toast.error("Erro: " + error.message); return; }
     toast.success("Status atualizado");
     const updated = pedidos.find((p) => p.id === id);
     if (updated) syncToSheets({ ...updated, status });
@@ -130,33 +135,15 @@ const AdminDashboard = () => {
   ) => {
     const { error } = await supabase
       .from("pedidos")
-      .update({
-        valor_total,
-        observacoes_admin,
-        itens: itens as any,
-        status: "em_orcamento",
-      })
+      .update({ valor_total, observacoes_admin, itens: itens as any, status: "em_orcamento" })
       .eq("id", id);
-    if (error) {
-      toast.error("Erro: " + error.message);
-      return;
-    }
+    if (error) { toast.error("Erro: " + error.message); return; }
     toast.success("Orçamento salvo");
     const base = pedidos.find((p) => p.id === id);
-    if (base) {
-      syncToSheets({
-        ...base,
-        valor_total,
-        observacoes_admin,
-        itens,
-        status: "em_orcamento",
-      });
-    }
+    if (base) syncToSheets({ ...base, valor_total, observacoes_admin, itens, status: "em_orcamento" });
     setPedidos((prev) =>
       prev.map((p) =>
-        p.id === id
-          ? { ...p, valor_total, observacoes_admin, itens, status: "em_orcamento" }
-          : p
+        p.id === id ? { ...p, valor_total, observacoes_admin, itens, status: "em_orcamento" } : p
       )
     );
     if (selected?.id === id)
@@ -165,137 +152,215 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-burgundy/15 bg-cream">
-        <div className="container-narrow flex h-20 items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-40 border-b border-burgundy/12 bg-cream/95 backdrop-blur-md">
+        <div className="container-narrow flex h-16 items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-3 shrink-0">
             <img
               src={logo}
               alt="Sarah Franco"
-              className="h-9 w-auto"
+              className="h-8 w-auto"
               style={{ filter: "brightness(0.4) sepia(1) hue-rotate(-20deg) saturate(6)" }}
             />
-            <span className="hidden text-xs uppercase tracking-[0.3em] text-petrol/60 md:inline">
+            <span className="hidden text-[0.65rem] uppercase tracking-[0.3em] text-petrol/50 md:inline">
               · Painel
             </span>
           </Link>
-          <div className="flex items-center gap-6">
-            <span className="hidden text-[0.7rem] uppercase tracking-[0.2em] text-petrol/50 md:inline">
+
+          {/* Tab navigation */}
+          <nav className="flex items-center gap-1 rounded-xl border border-burgundy/12 bg-background p-1">
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[0.7rem] font-medium uppercase tracking-[0.2em] transition-all duration-200 ${
+                  activeTab === id
+                    ? "bg-burgundy text-cream shadow-sm"
+                    : "text-petrol/60 hover:text-petrol"
+                }`}
+              >
+                <Icon size={13} />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-4">
+            <span className="hidden text-[0.65rem] uppercase tracking-[0.2em] text-petrol/40 lg:inline">
               {user?.email}
             </span>
             <button
               onClick={signOut}
-              className="text-xs uppercase tracking-[0.25em] text-petrol/70 hover:text-burgundy"
+              className="text-[0.65rem] uppercase tracking-[0.25em] text-petrol/60 hover:text-burgundy transition-colors"
             >
-              sair
+              Sair
             </button>
           </div>
         </div>
       </header>
 
-      <div className="container-narrow py-12 md:py-16">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="container-narrow py-10">
+        {/* ── Page title ── */}
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <span className="eyebrow">Administração</span>
-            <h1 className="mt-4 font-serif text-4xl text-petrol md:text-5xl">
-              Pedidos <span className="font-script text-burgundy">recebidos</span>
+            <h1 className="mt-3 font-serif text-3xl text-petrol md:text-4xl">
+              {activeTab === "pedidos" && (
+                <>Pedidos <span className="font-script text-burgundy">recebidos</span></>
+              )}
+              {activeTab === "analises" && (
+                <>Análises <span className="font-script text-burgundy">& Insights</ span></>
+              )}
+              {activeTab === "clientes" && (
+                <>Gestão de <span className="font-script text-burgundy">clientes</span></>
+              )}
             </h1>
-            <p className="mt-2 text-sm text-petrol/60">
-              {pedidos.length} pedido{pedidos.length !== 1 && "s"} no total
+            <p className="mt-1.5 text-sm text-petrol/50">
+              {pedidos.length} pedido{pedidos.length !== 1 && "s"} · {fmtMoney(faturamento)} faturados
             </p>
           </div>
-          <div className="flex flex-col gap-3 md:items-end">
+
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={gerarRelatorio}
               disabled={reportLoading}
-              className="bg-burgundy px-6 py-3 text-[0.7rem] uppercase tracking-[0.22em] text-cream transition-colors hover:bg-burgundy-deep disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center gap-2 rounded-xl border border-burgundy bg-burgundy px-4 py-2.5 text-[0.65rem] uppercase tracking-[0.22em] text-cream transition-all hover:bg-burgundy-deep disabled:opacity-60"
             >
-              {reportLoading ? "Gerando relatório..." : "Gerar relatório"}
+              <FileDown size={13} />
+              {reportLoading ? "Gerando…" : "Relatório PDF"}
             </button>
-            <div className="flex flex-wrap gap-2">
-              {(["todos", "novo", "em_orcamento", "finalizado"] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setFilter(s)}
-                  className={`border px-4 py-2 text-[0.7rem] uppercase tracking-[0.2em] transition-all ${
-                    filter === s
-                      ? "border-burgundy bg-burgundy text-cream"
-                      : "border-burgundy/25 text-petrol/70 hover:border-burgundy"
-                  }`}
-                >
-                  {s === "todos" ? "Todos" : statusLabels[s]}
-                </button>
-              ))}
+          </div>
+        </div>
+
+        {/* ── Loading state ── */}
+        {loading ? (
+          <div className="flex h-64 items-center justify-center">
+            <div className="space-y-3 text-center">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-burgundy/20 border-t-burgundy" />
+              <p className="text-xs uppercase tracking-[0.3em] text-petrol/40">carregando…</p>
             </div>
           </div>
-        </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="border border-burgundy/15 bg-cream p-5 shadow-soft">
-            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-burgundy/75">Pedidos finais</p>
-            <p className="mt-3 font-serif text-3xl text-petrol">{finalizados}</p>
-            <p className="mt-2 text-sm text-petrol/55">Base para medir conversão e desempenho mensal.</p>
-          </div>
-          <div className="border border-burgundy/15 bg-cream p-5 shadow-soft">
-            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-burgundy/75">Faturamento estimado</p>
-            <p className="mt-3 font-serif text-3xl text-petrol">{fmtMoney(faturamento)}</p>
-            <p className="mt-2 text-sm text-petrol/55">Soma dos pedidos que já possuem orçamento lançado.</p>
-          </div>
-          <div className="border border-burgundy/15 bg-cream p-5 shadow-soft">
-            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-burgundy/75">Relatório inteligente</p>
-            <p className="mt-3 font-serif text-3xl text-petrol">PDF</p>
-            <p className="mt-2 text-sm text-petrol/55">Inclui métricas, gráficos e insights automáticos com fallback seguro.</p>
-          </div>
-        </div>
-
-        <div className="mt-10">
-          {loading ? (
-            <p className="text-center text-xs uppercase tracking-[0.3em] text-petrol/40">carregando...</p>
-          ) : filtered.length === 0 ? (
-            <p className="border border-dashed border-burgundy/20 p-12 text-center text-sm text-petrol/50">
-              Nenhum pedido {filter !== "todos" && `com status "${statusLabels[filter as keyof typeof statusLabels]}"`}.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {filtered.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setSelected(p)}
-                  className="block w-full border border-burgundy/15 bg-cream p-5 text-left transition-all hover:border-burgundy hover:shadow-soft"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="font-serif text-xl text-petrol">{p.nome_cliente}</p>
-                      <p className="mt-1 text-xs text-petrol/60">
-                        {new Date(p.created_at).toLocaleString("pt-BR")} · {p.itens.length} item(ns) ·{" "}
-                        {p.tipo_logistica}
-                      </p>
+        ) : (
+          <>
+            {/* ══ ABA: PEDIDOS ══ */}
+            {activeTab === "pedidos" && (
+              <div>
+                {/* KPIs resumo */}
+                <div className="mb-6 grid gap-4 sm:grid-cols-3">
+                  {[
+                    {
+                      label: "Novos",
+                      value: pedidos.filter((p) => p.status === "novo").length,
+                      color: "border-burgundy/20 bg-burgundy/5",
+                      dot: "bg-burgundy",
+                    },
+                    {
+                      label: "Em orçamento",
+                      value: pedidos.filter((p) => p.status === "em_orcamento").length,
+                      color: "border-petrol/20 bg-petrol/5",
+                      dot: "bg-petrol",
+                    },
+                    {
+                      label: "Finalizados",
+                      value: pedidos.filter((p) => p.status === "finalizado").length,
+                      color: "border-gold/40 bg-gold/8",
+                      dot: "bg-gold",
+                    },
+                  ].map(({ label, value, color, dot }) => (
+                    <div key={label} className={`rounded-2xl border p-5 ${color}`}>
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full ${dot}`} />
+                        <p className="text-[0.65rem] uppercase tracking-[0.25em] text-petrol/60">
+                          {label}
+                        </p>
+                      </div>
+                      <p className="mt-3 font-serif text-3xl text-petrol">{value}</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {p.valor_total != null && (
-                        <span className="text-sm font-medium text-burgundy">
-                          R$ {Number(p.valor_total).toFixed(2)}
-                        </span>
-                      )}
-                      <span
-                        className={`border px-3 py-1 text-[0.6rem] uppercase tracking-[0.2em] ${
-                          p.status === "novo"
-                            ? "border-burgundy bg-burgundy text-cream"
-                            : p.status === "em_orcamento"
-                            ? "border-petrol/40 text-petrol"
-                            : "border-petrol/20 text-petrol/50"
-                        }`}
-                      >
-                        {statusLabels[p.status]}
-                      </span>
-                    </div>
+                  ))}
+                </div>
+
+                {/* Filtros */}
+                <div className="mb-5 flex flex-wrap gap-2">
+                  {(["todos", "novo", "em_orcamento", "finalizado"] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setFilter(s)}
+                      className={`rounded-xl border px-4 py-2 text-[0.65rem] uppercase tracking-[0.2em] transition-all ${
+                        filter === s
+                          ? "border-burgundy bg-burgundy text-cream"
+                          : "border-burgundy/20 text-petrol/60 hover:border-burgundy/50"
+                      }`}
+                    >
+                      {s === "todos" ? "Todos" : statusLabels[s]}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Lista */}
+                {filtered.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-burgundy/20 py-16 text-center">
+                    <p className="text-sm text-petrol/40">
+                      Nenhum pedido{" "}
+                      {filter !== "todos" && `com status "${statusLabels[filter as keyof typeof statusLabels]}"`}.
+                    </p>
                   </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {filtered.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setSelected(p)}
+                        className="block w-full rounded-2xl border border-burgundy/12 bg-cream p-5 text-left transition-all hover:border-burgundy/40 hover:shadow-soft"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-burgundy/10 font-serif text-lg font-bold text-burgundy">
+                              {p.nome_cliente.charAt(0).toUpperCase()}
+                            </span>
+                            <div>
+                              <p className="font-medium text-petrol">{p.nome_cliente}</p>
+                              <p className="mt-0.5 text-xs text-petrol/50">
+                                {new Date(p.created_at).toLocaleString("pt-BR")} ·{" "}
+                                {p.itens.length} item(ns) · {p.tipo_logistica}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {p.valor_total != null && (
+                              <span className="text-sm font-semibold text-burgundy">
+                                {fmtMoney(Number(p.valor_total))}
+                              </span>
+                            )}
+                            <span
+                              className={`rounded-full px-3 py-1 text-[0.6rem] font-medium uppercase tracking-[0.2em] ${
+                                p.status === "novo"
+                                  ? "bg-burgundy text-cream"
+                                  : p.status === "em_orcamento"
+                                  ? "bg-petrol text-cream"
+                                  : "border border-petrol/20 text-petrol/60"
+                              }`}
+                            >
+                              {statusLabels[p.status]}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ══ ABA: ANÁLISES ══ */}
+            {activeTab === "analises" && <AnalyticsTab pedidos={pedidos} />}
+
+            {/* ══ ABA: CLIENTES ══ */}
+            {activeTab === "clientes" && <ClientesTab pedidos={pedidos} />}
+          </>
+        )}
       </div>
 
+      {/* ── Drawer de detalhe do pedido ── */}
       {selected && (
         <PedidoDetail
           pedido={selected}
@@ -308,6 +373,9 @@ const AdminDashboard = () => {
   );
 };
 
+/* ════════════════════════════════════════════════ */
+/* Drawer lateral de pedido — preservado intacto  */
+/* ════════════════════════════════════════════════ */
 const PedidoDetail = ({
   pedido,
   onClose,
@@ -328,15 +396,8 @@ const PedidoDetail = ({
   const [obs, setObs] = useState(pedido.observacoes_admin || "");
   const [exporting, setExporting] = useState(false);
 
-  const subtotal = Object.values(valoresItens).reduce(
-    (acc, v) => acc + (Number(v) || 0),
-    0
-  );
-
-  const aplicarSubtotal = () => {
-    setValor(subtotal ? subtotal.toFixed(2) : "");
-  };
-
+  const subtotal = Object.values(valoresItens).reduce((acc, v) => acc + (Number(v) || 0), 0);
+  const aplicarSubtotal = () => setValor(subtotal ? subtotal.toFixed(2) : "");
   const salvar = () => {
     const itensComValor = pedido.itens.map((it) => ({
       ...it,
@@ -364,9 +425,9 @@ const PedidoDetail = ({
                 }
               }}
               disabled={exporting}
-              className="border border-burgundy bg-burgundy px-4 py-2 text-[0.65rem] uppercase tracking-[0.25em] text-cream transition-colors hover:bg-burgundy-deep disabled:opacity-50"
+              className="rounded-xl border border-burgundy bg-burgundy px-4 py-2 text-[0.65rem] uppercase tracking-[0.25em] text-cream transition-colors hover:bg-burgundy-deep disabled:opacity-50"
             >
-              {exporting ? "Gerando..." : "Baixar PDF"}
+              {exporting ? "Gerando…" : "Baixar PDF"}
             </button>
             <button onClick={onClose} className="text-xs uppercase tracking-[0.2em] text-petrol/60 hover:text-burgundy">
               fechar ✕
@@ -388,9 +449,7 @@ const PedidoDetail = ({
           </Block>
 
           <Block title="Evento">
-            <p>
-              {new Date(pedido.data_evento + "T00:00").toLocaleDateString("pt-BR")} às {pedido.horario_evento}
-            </p>
+            <p>{new Date(pedido.data_evento + "T00:00").toLocaleDateString("pt-BR")} às {pedido.horario_evento}</p>
           </Block>
 
           <Block title={pedido.tipo_logistica === "entrega" ? "Entrega" : "Retirada"}>
@@ -398,14 +457,12 @@ const PedidoDetail = ({
               <>
                 <p>{pedido.endereco_entrega}</p>
                 <p>
-                  {pedido.data_entrega && new Date(pedido.data_entrega + "T00:00").toLocaleDateString("pt-BR")} às{" "}
-                  {pedido.horario_entrega}
+                  {pedido.data_entrega && new Date(pedido.data_entrega + "T00:00").toLocaleDateString("pt-BR")} às {pedido.horario_entrega}
                 </p>
               </>
             ) : (
               <p>
-                {pedido.data_retirada && new Date(pedido.data_retirada + "T00:00").toLocaleDateString("pt-BR")} às{" "}
-                {pedido.horario_retirada}
+                {pedido.data_retirada && new Date(pedido.data_retirada + "T00:00").toLocaleDateString("pt-BR")} às {pedido.horario_retirada}
               </p>
             )}
           </Block>
@@ -431,9 +488,7 @@ const PedidoDetail = ({
                     </div>
                   )}
                   <div className="mt-3 flex items-center gap-3">
-                    <span className="text-[0.6rem] uppercase tracking-[0.2em] text-petrol/50">
-                      Valor
-                    </span>
+                    <span className="text-[0.6rem] uppercase tracking-[0.2em] text-petrol/50">Valor</span>
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-petrol/60">R$</span>
                       <input
@@ -441,11 +496,9 @@ const PedidoDetail = ({
                         step="0.01"
                         min="0"
                         value={valoresItens[it.id] || ""}
-                        onChange={(e) =>
-                          setValoresItens((prev) => ({ ...prev, [it.id]: e.target.value }))
-                        }
+                        onChange={(e) => setValoresItens((prev) => ({ ...prev, [it.id]: e.target.value }))}
                         placeholder="0,00"
-                        className="w-28 border border-burgundy/20 bg-background px-2 py-1.5 text-sm text-petrol focus:border-burgundy focus:outline-none"
+                        className="w-28 rounded-lg border border-burgundy/20 bg-background px-2 py-1.5 text-sm text-petrol focus:border-burgundy focus:outline-none"
                       />
                     </div>
                   </div>
@@ -460,7 +513,7 @@ const PedidoDetail = ({
                 <button
                   key={s}
                   onClick={() => onStatus(s)}
-                  className={`border px-4 py-2 text-[0.65rem] uppercase tracking-[0.2em] transition-all ${
+                  className={`rounded-xl border px-4 py-2 text-[0.65rem] uppercase tracking-[0.2em] transition-all ${
                     pedido.status === s
                       ? "border-burgundy bg-burgundy text-cream"
                       : "border-burgundy/25 text-petrol/70 hover:border-burgundy"
@@ -485,14 +538,14 @@ const PedidoDetail = ({
                     min="0"
                     value={valor}
                     onChange={(e) => setValor(e.target.value)}
-                    className="w-full border border-burgundy/20 bg-background px-4 py-3 text-sm text-petrol focus:border-burgundy focus:outline-none"
+                    className="w-full rounded-lg border border-burgundy/20 bg-background px-4 py-3 text-sm text-petrol focus:border-burgundy focus:outline-none"
                     placeholder="0,00"
                   />
                 </label>
                 <button
                   type="button"
                   onClick={aplicarSubtotal}
-                  className="border border-burgundy/30 px-3 py-3 text-[0.6rem] uppercase tracking-[0.2em] text-burgundy hover:bg-burgundy hover:text-cream"
+                  className="rounded-xl border border-burgundy/30 px-3 py-3 text-[0.6rem] uppercase tracking-[0.2em] text-burgundy hover:bg-burgundy hover:text-cream"
                   title="Somar valores dos itens"
                 >
                   Σ R$ {subtotal.toFixed(2)}
@@ -506,13 +559,13 @@ const PedidoDetail = ({
                   rows={3}
                   value={obs}
                   onChange={(e) => setObs(e.target.value)}
-                  className="w-full resize-none border border-burgundy/20 bg-background px-4 py-3 text-sm text-petrol focus:border-burgundy focus:outline-none"
+                  className="w-full resize-none rounded-lg border border-burgundy/20 bg-background px-4 py-3 text-sm text-petrol focus:border-burgundy focus:outline-none"
                   placeholder="Detalhes do orçamento, prazo, etc."
                 />
               </label>
               <button
                 onClick={salvar}
-                className="bg-burgundy px-6 py-3 text-xs uppercase tracking-[0.25em] text-cream transition-colors hover:bg-burgundy-deep"
+                className="rounded-xl bg-burgundy px-6 py-3 text-xs uppercase tracking-[0.25em] text-cream transition-colors hover:bg-burgundy-deep"
               >
                 Salvar orçamento
               </button>

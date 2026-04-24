@@ -167,6 +167,9 @@
   .bg-petrol { background-color: hsl(var(--petrol)); }
   .border-burgundy { border-color: hsl(var(--burgundy)); }
   .border-cream-deep { border-color: hsl(var(--cream-deep)); }
+  .bg-gold { background-color: hsl(var(--gold)); }
+  .text-gold { color: hsl(var(--gold)); }
+  .bg-petrol-soft { background-color: hsl(var(--petrol-soft)); }
 
   .animate-fade-up {
     animation: fadeUp 0.9s var(--transition-smooth) both;
