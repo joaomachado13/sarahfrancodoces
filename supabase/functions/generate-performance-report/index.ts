@@ -1,15 +1,20 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { z } from "npm:zod@3.25.76";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BodySchema = z.object({
-  monthsBack: z.number().int().min(3).max(24).optional(),
-});
+function parseBody(input: unknown) {
+  if (!input || typeof input !== "object") return { monthsBack: 6 };
+  const rawMonthsBack = (input as { monthsBack?: unknown }).monthsBack;
+  if (rawMonthsBack == null) return { monthsBack: 6 };
+  if (typeof rawMonthsBack !== "number" || !Number.isInteger(rawMonthsBack) || rawMonthsBack < 3 || rawMonthsBack > 24) {
+    throw new Error("monthsBack deve ser um número inteiro entre 3 e 24.");
+  }
+  return { monthsBack: rawMonthsBack };
+}
 
 const InsightSchema = {
   type: "function",
@@ -201,9 +206,11 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 
     const bodyRaw = req.method === "POST" ? await req.json().catch(() => ({})) : {};
-    const body = BodySchema.safeParse(bodyRaw);
-    if (!body.success) {
-      return new Response(JSON.stringify({ error: body.error.flatten() }), {
+    let body;
+    try {
+      body = parseBody(bodyRaw);
+    } catch (error) {
+      return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Parâmetros inválidos." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -251,7 +258,7 @@ serve(async (req) => {
     }
 
     const pedidos = (data || []) as PedidoRow[];
-    const monthsBack = body.data.monthsBack ?? 6;
+    const monthsBack = body.monthsBack;
     const monthSeries = createMonthSeries(pedidos, monthsBack);
 
     const totalPedidos = pedidos.length;
