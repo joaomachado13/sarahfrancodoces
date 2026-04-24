@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-sarah-franco.png";
 import type { OrderItem } from "@/types/order";
 import { generatePedidoPdf } from "@/lib/generatePedidoPdf";
+import { generatePerformanceReportPdf } from "@/lib/report/generatePerformanceReportPdf";
+import type { PerformanceReportData } from "@/lib/report/types";
 
 const syncToSheets = (pedido: PedidoRow) => {
   supabase.functions
@@ -54,12 +56,16 @@ const statusLabels = {
   finalizado: "Finalizado",
 } as const;
 
+const fmtMoney = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
+
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
   const [pedidos, setPedidos] = useState<PedidoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"todos" | PedidoRow["status"]>("todos");
   const [selected, setSelected] = useState<PedidoRow | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -80,6 +86,28 @@ const AdminDashboard = () => {
   }, []);
 
   const filtered = filter === "todos" ? pedidos : pedidos.filter((p) => p.status === filter);
+  const finalizados = useMemo(() => pedidos.filter((pedido) => pedido.status === "finalizado").length, [pedidos]);
+  const faturamento = useMemo(
+    () => pedidos.reduce((sum, pedido) => sum + Number(pedido.valor_total || 0), 0),
+    [pedidos]
+  );
+
+  const gerarRelatorio = async () => {
+    try {
+      setReportLoading(true);
+      const { data, error } = await supabase.functions.invoke("generate-performance-report", {
+        body: { monthsBack: 6 },
+      });
+
+      if (error) throw error;
+      generatePerformanceReportPdf(data as PerformanceReportData);
+      toast.success("Relatório gerado com sucesso");
+    } catch (error: any) {
+      toast.error("Erro ao gerar relatório: " + (error?.message || "desconhecido"));
+    } finally {
+      setReportLoading(false);
+    }
+  };
 
   const updateStatus = async (id: string, status: PedidoRow["status"]) => {
     const { error } = await supabase.from("pedidos").update({ status }).eq("id", id);
@@ -175,20 +203,47 @@ const AdminDashboard = () => {
               {pedidos.length} pedido{pedidos.length !== 1 && "s"} no total
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {(["todos", "novo", "em_orcamento", "finalizado"] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setFilter(s)}
-                className={`border px-4 py-2 text-[0.7rem] uppercase tracking-[0.2em] transition-all ${
-                  filter === s
-                    ? "border-burgundy bg-burgundy text-cream"
-                    : "border-burgundy/25 text-petrol/70 hover:border-burgundy"
-                }`}
-              >
-                {s === "todos" ? "Todos" : statusLabels[s]}
-              </button>
-            ))}
+          <div className="flex flex-col gap-3 md:items-end">
+            <button
+              onClick={gerarRelatorio}
+              disabled={reportLoading}
+              className="bg-burgundy px-6 py-3 text-[0.7rem] uppercase tracking-[0.22em] text-cream transition-colors hover:bg-burgundy-deep disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {reportLoading ? "Gerando relatório..." : "Gerar relatório"}
+            </button>
+            <div className="flex flex-wrap gap-2">
+              {(["todos", "novo", "em_orcamento", "finalizado"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setFilter(s)}
+                  className={`border px-4 py-2 text-[0.7rem] uppercase tracking-[0.2em] transition-all ${
+                    filter === s
+                      ? "border-burgundy bg-burgundy text-cream"
+                      : "border-burgundy/25 text-petrol/70 hover:border-burgundy"
+                  }`}
+                >
+                  {s === "todos" ? "Todos" : statusLabels[s]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="border border-burgundy/15 bg-cream p-5 shadow-soft">
+            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-burgundy/75">Pedidos finais</p>
+            <p className="mt-3 font-serif text-3xl text-petrol">{finalizados}</p>
+            <p className="mt-2 text-sm text-petrol/55">Base para medir conversão e desempenho mensal.</p>
+          </div>
+          <div className="border border-burgundy/15 bg-cream p-5 shadow-soft">
+            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-burgundy/75">Faturamento estimado</p>
+            <p className="mt-3 font-serif text-3xl text-petrol">{fmtMoney(faturamento)}</p>
+            <p className="mt-2 text-sm text-petrol/55">Soma dos pedidos que já possuem orçamento lançado.</p>
+          </div>
+          <div className="border border-burgundy/15 bg-cream p-5 shadow-soft">
+            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-burgundy/75">Relatório inteligente</p>
+            <p className="mt-3 font-serif text-3xl text-petrol">PDF</p>
+            <p className="mt-2 text-sm text-petrol/55">Inclui métricas, gráficos e insights automáticos com fallback seguro.</p>
           </div>
         </div>
 
