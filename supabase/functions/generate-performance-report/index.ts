@@ -202,7 +202,6 @@ serve(async (req) => {
 
   try {
     const SUPABASE_URL = getEnv("SUPABASE_URL");
-    const SUPABASE_PUBLISHABLE_KEY = getEnv("SUPABASE_PUBLISHABLE_KEY");
     const SUPABASE_SERVICE_ROLE_KEY = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 
     const bodyRaw = req.method === "POST" ? await req.json().catch(() => ({})) : {};
@@ -225,10 +224,9 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const anonClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { data: userData, error: userError } = await anonClient.auth.getUser(token);
+    const { data: userData, error: userError } = await serviceClient.auth.getUser(token);
     if (userError || !userData.user) {
       return new Response(JSON.stringify({ error: "Sessão inválida." }), {
         status: 401,
