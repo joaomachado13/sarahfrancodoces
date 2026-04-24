@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.sync-pedido-sheets]
 verify_jwt = false
+
+[functions.generate-performance-report]
+verify_jwt = false
