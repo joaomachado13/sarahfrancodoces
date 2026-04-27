@@ -12,6 +12,7 @@ type PedidoRow = {
   status: "novo" | "em_orcamento" | "finalizado";
   valor_total: number | null;
   created_at: string;
+  tipo_logistica?: string | null;
 };
 
 type Cliente = {
