@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { LayoutDashboard, BarChart3, Users, FileDown } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, FileDown, Search, CalendarDays, Clock, Sparkles, TrendingUp, DollarSign, CheckCircle2, Timer, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-sarah-franco.png";
@@ -55,6 +55,10 @@ export type PedidoRow = {
   created_at: string;
 };
 
+type PricedOrderItem = OrderItem & { valor?: number | null };
+
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "desconhecido";
+
 const statusLabels = {
   novo: "Novo",
   em_orcamento: "Em orçamento",
@@ -73,33 +77,215 @@ const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
 ];
 
 /* ════════════════════════════════════════════════ */
+const STATUS_COLUMNS: { status: PedidoRow["status"]; title: string; hint: string }[] = [
+  { status: "novo", title: "Novo", hint: "Entradas recentes" },
+  { status: "em_orcamento", title: "Em orçamento", hint: "Propostas em andamento" },
+  { status: "finalizado", title: "Finalizado", hint: "Pedidos concluídos" },
+];
+
+const statusPill = {
+  novo: "bg-burgundy text-cream",
+  em_orcamento: "bg-petrol text-cream",
+  finalizado: "border border-gold/50 bg-gold/20 text-petrol",
+} as const;
+
+const statusPanel = {
+  novo: "border-burgundy/18 bg-burgundy/5",
+  em_orcamento: "border-petrol/18 bg-petrol/5",
+  finalizado: "border-gold/40 bg-gold/10",
+} as const;
+
+const fmtDate = (date: string) => new Date(`${date}T00:00`).toLocaleDateString("pt-BR");
+
+const itemSummary = (item: OrderItem) => {
+  if (item.tipo === "bolo") {
+    return ["Bolo", item.tamanho, item.massa && `massa ${item.massa}`, item.recheio && `recheio ${item.recheio}`]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  return [`${item.quantidade || 0} doces`, item.sabores].filter(Boolean).join(" · ");
+};
+
+const resumoPedido = (pedido: PedidoRow) => {
+  const itens = pedido.itens || [];
+  if (!itens.length) return "Pedido sem itens detalhados";
+  const resumo = itens.slice(0, 2).map(itemSummary).join(" | ");
+  return itens.length > 2 ? `${resumo} +${itens.length - 2} item(ns)` : resumo;
+};
+
+const isRecentNew = (pedido: PedidoRow) => {
+  if (pedido.status !== "novo") return false;
+  const created = new Date(pedido.created_at).getTime();
+  return Date.now() - created < 1000 * 60 * 60 * 48;
+};
+
+const sameDate = (left: string, right: string) => left === right;
+
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
   const [pedidos, setPedidos] = useState<PedidoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("pedidos");
-  const [filter, setFilter] = useState<"todos" | PedidoRow["status"]>("todos");
+  const [statusFilter, setStatusFilter] = useState<"todos" | PedidoRow["status"]>("todos");
+  const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [periodFilter, setPeriodFilter] = useState<"semana" | "mes" | "personalizado">("mes");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
   const [selected, setSelected] = useState<PedidoRow | null>(null);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [reportData, setReportData] = useState<PerformanceReportData | null>(null);
 
-  const load = async () => {
+  const sortPedidos = (rows: PedidoRow[]) =>
+    [...rows].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("pedidos")
       .select("*")
       .order("created_at", { ascending: false });
     if (error) toast.error("Erro ao carregar pedidos: " + error.message);
-    else setPedidos((data as any) || []);
+    else setPedidos(sortPedidos((data || []) as PedidoRow[]));
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const filtered = filter === "todos" ? pedidos : pedidos.filter((p) => p.status === filter);
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-pedidos-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "pedidos" },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const next = payload.new as PedidoRow;
+            setPedidos((prev) => sortPedidos(prev.some((p) => p.id === next.id) ? prev : [next, ...prev]));
+          }
+          if (payload.eventType === "UPDATE") {
+            const next = payload.new as PedidoRow;
+            setPedidos((prev) => sortPedidos(prev.map((p) => (p.id === next.id ? next : p))));
+            setSelected((current) => (current?.id === next.id ? next : current));
+          }
+          if (payload.eventType === "DELETE") {
+            const oldId = (payload.old as { id?: string }).id;
+            if (oldId) setPedidos((prev) => prev.filter((p) => p.id !== oldId));
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const currentMonthPedidos = useMemo(() => {
+    const now = new Date();
+    return pedidos.filter((p) => {
+      const d = new Date(p.created_at);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+  }, [pedidos]);
+
+  const previousMonthPedidos = useMemo(() => {
+    const now = new Date();
+    const previous = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return pedidos.filter((p) => {
+      const d = new Date(p.created_at);
+      return d.getMonth() === previous.getMonth() && d.getFullYear() === previous.getFullYear();
+    });
+  }, [pedidos]);
+
+  const analyticsPedidos = useMemo(() => {
+    const now = new Date();
+    if (periodFilter === "semana") {
+      const start = new Date(now);
+      start.setDate(now.getDate() - 7);
+      return pedidos.filter((p) => new Date(p.created_at) >= start);
+    }
+    if (periodFilter === "personalizado") {
+      return pedidos.filter((p) => {
+        const created = new Date(p.created_at);
+        const afterStart = customStart ? created >= new Date(`${customStart}T00:00`) : true;
+        const beforeEnd = customEnd ? created <= new Date(`${customEnd}T23:59:59`) : true;
+        return afterStart && beforeEnd;
+      });
+    }
+    return currentMonthPedidos;
+  }, [currentMonthPedidos, customEnd, customStart, pedidos, periodFilter]);
+
+  const kpis = useMemo(() => {
+    const pedidosComValor = pedidos.filter((p) => p.valor_total != null);
+    const faturamento = pedidosComValor.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+    const ticketMedio = pedidosComValor.length ? faturamento / pedidosComValor.length : 0;
+    const crescimento = previousMonthPedidos.length
+      ? ((currentMonthPedidos.length - previousMonthPedidos.length) / previousMonthPedidos.length) * 100
+      : currentMonthPedidos.length
+        ? 100
+        : 0;
+
+    return [
+      { label: "Total de pedidos", value: pedidos.length, sub: "base completa", icon: LayoutDashboard },
+      { label: "Pedidos do mês", value: currentMonthPedidos.length, sub: `${crescimento >= 0 ? "+" : ""}${crescimento.toFixed(1)}% vs mês anterior`, icon: TrendingUp },
+      { label: "Finalizados", value: pedidos.filter((p) => p.status === "finalizado").length, sub: "pedidos concluídos", icon: CheckCircle2 },
+      { label: "Em orçamento", value: pedidos.filter((p) => p.status === "em_orcamento").length, sub: "em negociação", icon: Timer },
+      { label: "Ticket médio", value: fmtMoney(ticketMedio), sub: "pedidos com valor", icon: DollarSign },
+      { label: "Faturamento", value: fmtMoney(faturamento), sub: "estimado lançado", icon: BarChart3 },
+    ];
+  }, [currentMonthPedidos.length, pedidos, previousMonthPedidos.length]);
+
+  const filteredPedidos = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return pedidos.filter((pedido) => {
+      const matchesSearch = !q || [pedido.nome_cliente, pedido.telefone, resumoPedido(pedido)]
+        .join(" ")
+        .toLowerCase()
+        .includes(q);
+      const matchesDate = !dateFilter || sameDate(pedido.data_evento, dateFilter);
+      return matchesSearch && matchesDate;
+    });
+  }, [dateFilter, pedidos, search]);
+
+  const visibleColumns = statusFilter === "todos"
+    ? STATUS_COLUMNS
+    : STATUS_COLUMNS.filter((column) => column.status === statusFilter);
+
   const faturamento = useMemo(
     () => pedidos.reduce((s, p) => s + Number(p.valor_total || 0), 0),
-    [pedidos]
+    [pedidos],
   );
+
+  const carregarInsights = useCallback(async (showToast = false) => {
+    try {
+      setInsightLoading(true);
+      const { data, error } = await supabase.functions.invoke("generate-performance-report", {
+        body: { monthsBack: 6 },
+      });
+      if (error) throw error;
+      setReportData(data as PerformanceReportData);
+      if (showToast) toast.success("Insights atualizados");
+      return data as PerformanceReportData;
+    } catch (error: unknown) {
+      console.error("Erro ao gerar insights:", error);
+      if (showToast) toast.error("Não foi possível atualizar os insights agora.");
+      return null;
+    } finally {
+      setInsightLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "analises" && !reportData && !insightLoading) {
+      carregarInsights(false);
+    }
+  }, [activeTab, carregarInsights, insightLoading, reportData]);
 
   const gerarRelatorio = async () => {
     try {
@@ -108,22 +294,30 @@ const AdminDashboard = () => {
         body: { monthsBack: 6 },
       });
       if (error) throw error;
-      generatePerformanceReportPdf(data as PerformanceReportData);
+      setReportData(data as PerformanceReportData);
+      generatePerformanceReportPdf(data as PerformanceReportData, pedidos.slice(0, 8));
       toast.success("Relatório gerado com sucesso");
-    } catch (error: any) {
-      toast.error("Erro ao gerar relatório: " + (error?.message || "desconhecido"));
+    } catch (error: unknown) {
+      toast.error("Erro ao gerar relatório: " + getErrorMessage(error));
     } finally {
       setReportLoading(false);
     }
   };
 
   const updateStatus = async (id: string, status: PedidoRow["status"]) => {
+    const current = pedidos.find((p) => p.id === id);
+    if (!current || current.status === status) return;
+
+    setUpdatingId(id);
     const { error } = await supabase.from("pedidos").update({ status }).eq("id", id);
-    if (error) { toast.error("Erro: " + error.message); return; }
+    setUpdatingId(null);
+    if (error) {
+      toast.error("Erro: " + error.message);
+      return;
+    }
     toast.success("Status atualizado");
-    const updated = pedidos.find((p) => p.id === id);
-    if (updated) syncToSheets({ ...updated, status });
-    setPedidos((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)));
+    syncToSheets({ ...current, status });
+    setPedidos((prev) => sortPedidos(prev.map((p) => (p.id === id ? { ...p, status } : p))));
     if (selected?.id === id) setSelected({ ...selected, status });
   };
 
@@ -131,20 +325,20 @@ const AdminDashboard = () => {
     id: string,
     valor_total: number | null,
     observacoes_admin: string | null,
-    itens: OrderItem[]
+    itens: OrderItem[],
   ) => {
     const { error } = await supabase
       .from("pedidos")
-      .update({ valor_total, observacoes_admin, itens: itens as any, status: "em_orcamento" })
+      .update({ valor_total, observacoes_admin, itens: itens as never, status: "em_orcamento" })
       .eq("id", id);
     if (error) { toast.error("Erro: " + error.message); return; }
     toast.success("Orçamento salvo");
     const base = pedidos.find((p) => p.id === id);
     if (base) syncToSheets({ ...base, valor_total, observacoes_admin, itens, status: "em_orcamento" });
     setPedidos((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, valor_total, observacoes_admin, itens, status: "em_orcamento" } : p
-      )
+      sortPedidos(prev.map((p) =>
+        p.id === id ? { ...p, valor_total, observacoes_admin, itens, status: "em_orcamento" } : p,
+      )),
     );
     if (selected?.id === id)
       setSelected({ ...selected, valor_total, observacoes_admin, itens, status: "em_orcamento" });
@@ -152,10 +346,9 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ── Header ── */}
       <header className="sticky top-0 z-40 border-b border-burgundy/12 bg-cream/95 backdrop-blur-md">
         <div className="container-narrow flex h-16 items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-3 shrink-0">
+          <Link to="/" className="flex shrink-0 items-center gap-3">
             <img
               src={logo}
               alt="Sarah Franco"
@@ -167,13 +360,12 @@ const AdminDashboard = () => {
             </span>
           </Link>
 
-          {/* Tab navigation */}
           <nav className="flex items-center gap-1 rounded-xl border border-burgundy/12 bg-background p-1">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-[0.7rem] font-medium uppercase tracking-[0.2em] transition-all duration-200 ${
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[0.65rem] font-medium uppercase tracking-[0.18em] transition-all duration-200 sm:px-4 ${
                   activeTab === id
                     ? "bg-burgundy text-cream shadow-sm"
                     : "text-petrol/60 hover:text-petrol"
@@ -186,12 +378,12 @@ const AdminDashboard = () => {
           </nav>
 
           <div className="flex items-center gap-4">
-            <span className="hidden text-[0.65rem] uppercase tracking-[0.2em] text-petrol/40 lg:inline">
+            <span className="hidden max-w-[180px] truncate text-[0.65rem] uppercase tracking-[0.2em] text-petrol/40 lg:inline">
               {user?.email}
             </span>
             <button
               onClick={signOut}
-              className="text-[0.65rem] uppercase tracking-[0.25em] text-petrol/60 hover:text-burgundy transition-colors"
+              className="text-[0.65rem] uppercase tracking-[0.25em] text-petrol/60 transition-colors hover:text-burgundy"
             >
               Sair
             </button>
@@ -199,17 +391,16 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      <div className="container-narrow py-10">
-        {/* ── Page title ── */}
+      <div className="container-narrow py-8 md:py-10">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <span className="eyebrow">Administração</span>
             <h1 className="mt-3 font-serif text-3xl text-petrol md:text-4xl">
               {activeTab === "pedidos" && (
-                <>Pedidos <span className="font-script text-burgundy">recebidos</span></>
+                <>CRM de <span className="font-script text-burgundy">pedidos</span></>
               )}
               {activeTab === "analises" && (
-                <>Análises <span className="font-script text-burgundy">& Insights</ span></>
+                <>Análises <span className="font-script text-burgundy">& Insights</span></>
               )}
               {activeTab === "clientes" && (
                 <>Gestão de <span className="font-script text-burgundy">clientes</span></>
@@ -220,147 +411,268 @@ const AdminDashboard = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={gerarRelatorio}
-              disabled={reportLoading}
-              className="flex items-center gap-2 rounded-xl border border-burgundy bg-burgundy px-4 py-2.5 text-[0.65rem] uppercase tracking-[0.22em] text-cream transition-all hover:bg-burgundy-deep disabled:opacity-60"
-            >
-              <FileDown size={13} />
-              {reportLoading ? "Gerando…" : "Relatório PDF"}
-            </button>
-          </div>
+          <button
+            onClick={gerarRelatorio}
+            disabled={reportLoading}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-burgundy bg-burgundy px-4 py-2.5 text-[0.65rem] uppercase tracking-[0.22em] text-cream transition-all hover:bg-burgundy-deep disabled:opacity-60 sm:w-auto"
+          >
+            <FileDown size={13} />
+            {reportLoading ? "Gerando…" : "Gerar relatório"}
+          </button>
         </div>
 
-        {/* ── Loading state ── */}
         {loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <div className="space-y-3 text-center">
-              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-burgundy/20 border-t-burgundy" />
-              <p className="text-xs uppercase tracking-[0.3em] text-petrol/40">carregando…</p>
-            </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="h-32 animate-pulse rounded-2xl border border-burgundy/10 bg-cream" />
+            ))}
           </div>
         ) : (
           <>
-            {/* ══ ABA: PEDIDOS ══ */}
+            <div className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+              {kpis.map(({ label, value, sub, icon: Icon }) => (
+                <div key={label} className="rounded-2xl border border-burgundy/12 bg-cream p-4 shadow-soft">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[0.6rem] uppercase tracking-[0.22em] text-petrol/50">{label}</p>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-burgundy/8 text-burgundy">
+                      <Icon size={14} />
+                    </span>
+                  </div>
+                  <p className="mt-3 font-serif text-2xl text-petrol">{value}</p>
+                  <p className="mt-1 text-[0.65rem] text-petrol/45">{sub}</p>
+                </div>
+              ))}
+            </div>
+
             {activeTab === "pedidos" && (
-              <div>
-                {/* KPIs resumo */}
-                <div className="mb-6 grid gap-4 sm:grid-cols-3">
-                  {[
-                    {
-                      label: "Novos",
-                      value: pedidos.filter((p) => p.status === "novo").length,
-                      color: "border-burgundy/20 bg-burgundy/5",
-                      dot: "bg-burgundy",
-                    },
-                    {
-                      label: "Em orçamento",
-                      value: pedidos.filter((p) => p.status === "em_orcamento").length,
-                      color: "border-petrol/20 bg-petrol/5",
-                      dot: "bg-petrol",
-                    },
-                    {
-                      label: "Finalizados",
-                      value: pedidos.filter((p) => p.status === "finalizado").length,
-                      color: "border-gold/40 bg-gold/8",
-                      dot: "bg-gold",
-                    },
-                  ].map(({ label, value, color, dot }) => (
-                    <div key={label} className={`rounded-2xl border p-5 ${color}`}>
-                      <div className="flex items-center gap-2">
-                        <span className={`h-2 w-2 rounded-full ${dot}`} />
-                        <p className="text-[0.65rem] uppercase tracking-[0.25em] text-petrol/60">
-                          {label}
-                        </p>
-                      </div>
-                      <p className="mt-3 font-serif text-3xl text-petrol">{value}</p>
+              <div className="space-y-5">
+                <div className="rounded-2xl border border-burgundy/12 bg-cream p-4 shadow-soft">
+                  <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-center">
+                    <label className="flex items-center gap-2.5 rounded-xl border border-burgundy/15 bg-background px-3.5 py-2.5">
+                      <Search size={14} className="text-petrol/40" />
+                      <input
+                        type="search"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Buscar por cliente, telefone ou pedido…"
+                        className="w-full bg-transparent text-sm text-petrol placeholder:text-petrol/35 focus:outline-none"
+                      />
+                    </label>
+
+                    <label className="flex items-center gap-2.5 rounded-xl border border-burgundy/15 bg-background px-3.5 py-2.5">
+                      <CalendarDays size={14} className="text-petrol/40" />
+                      <input
+                        type="date"
+                        value={dateFilter}
+                        onChange={(event) => setDateFilter(event.target.value)}
+                        className="bg-transparent text-sm text-petrol focus:outline-none"
+                      />
+                    </label>
+
+                    <div className="flex flex-wrap gap-2">
+                      {(["todos", "novo", "em_orcamento", "finalizado"] as const).map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => setStatusFilter(status)}
+                          className={`rounded-xl border px-3 py-2 text-[0.62rem] uppercase tracking-[0.18em] transition-all ${
+                            statusFilter === status
+                              ? "border-burgundy bg-burgundy text-cream"
+                              : "border-burgundy/20 text-petrol/60 hover:border-burgundy/50"
+                          }`}
+                        >
+                          {status === "todos" ? "Todos" : statusLabels[status]}
+                        </button>
+                      ))}
                     </div>
-                  ))}
-                </div>
-
-                {/* Filtros */}
-                <div className="mb-5 flex flex-wrap gap-2">
-                  {(["todos", "novo", "em_orcamento", "finalizado"] as const).map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setFilter(s)}
-                      className={`rounded-xl border px-4 py-2 text-[0.65rem] uppercase tracking-[0.2em] transition-all ${
-                        filter === s
-                          ? "border-burgundy bg-burgundy text-cream"
-                          : "border-burgundy/20 text-petrol/60 hover:border-burgundy/50"
-                      }`}
-                    >
-                      {s === "todos" ? "Todos" : statusLabels[s]}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Lista */}
-                {filtered.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-burgundy/20 py-16 text-center">
-                    <p className="text-sm text-petrol/40">
-                      Nenhum pedido{" "}
-                      {filter !== "todos" && `com status "${statusLabels[filter as keyof typeof statusLabels]}"`}.
-                    </p>
                   </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    {filtered.map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => setSelected(p)}
-                        className="block w-full rounded-2xl border border-burgundy/12 bg-cream p-5 text-left transition-all hover:border-burgundy/40 hover:shadow-soft"
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-3">
+                  {visibleColumns.map((column) => {
+                    const columnPedidos = filteredPedidos.filter((pedido) => pedido.status === column.status);
+                    return (
+                      <section
+                        key={column.status}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          if (draggedId) updateStatus(draggedId, column.status);
+                          setDraggedId(null);
+                        }}
+                        className={`min-h-[320px] rounded-2xl border p-4 shadow-soft ${statusPanel[column.status]}`}
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-burgundy/10 font-serif text-lg font-bold text-burgundy">
-                              {p.nome_cliente.charAt(0).toUpperCase()}
-                            </span>
-                            <div>
-                              <p className="font-medium text-petrol">{p.nome_cliente}</p>
-                              <p className="mt-0.5 text-xs text-petrol/50">
-                                {new Date(p.created_at).toLocaleString("pt-BR")} ·{" "}
-                                {p.itens.length} item(ns) · {p.tipo_logistica}
-                              </p>
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`h-2.5 w-2.5 rounded-full ${column.status === "novo" ? "bg-burgundy" : column.status === "em_orcamento" ? "bg-petrol" : "bg-gold"}`} />
+                              <h2 className="font-serif text-xl text-petrol">{column.title}</h2>
                             </div>
+                            <p className="mt-1 text-xs text-petrol/45">{column.hint}</p>
                           </div>
-                          <div className="flex items-center gap-3">
-                            {p.valor_total != null && (
-                              <span className="text-sm font-semibold text-burgundy">
-                                {fmtMoney(Number(p.valor_total))}
-                              </span>
-                            )}
-                            <span
-                              className={`rounded-full px-3 py-1 text-[0.6rem] font-medium uppercase tracking-[0.2em] ${
-                                p.status === "novo"
-                                  ? "bg-burgundy text-cream"
-                                  : p.status === "em_orcamento"
-                                  ? "bg-petrol text-cream"
-                                  : "border border-petrol/20 text-petrol/60"
-                              }`}
-                            >
-                              {statusLabels[p.status]}
-                            </span>
-                          </div>
+                          <span className="rounded-full border border-burgundy/15 bg-cream px-2.5 py-1 text-xs font-semibold text-burgundy">
+                            {columnPedidos.length}
+                          </span>
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+
+                        <div className="space-y-3">
+                          {columnPedidos.length === 0 ? (
+                            <div className="rounded-xl border border-dashed border-burgundy/18 bg-cream/60 px-4 py-10 text-center">
+                              <p className="text-sm text-petrol/40">Nenhum pedido nesta etapa.</p>
+                            </div>
+                          ) : (
+                            columnPedidos.map((pedido) => (
+                              <article
+                                key={pedido.id}
+                                draggable
+                                onDragStart={() => setDraggedId(pedido.id)}
+                                onDragEnd={() => setDraggedId(null)}
+                                onClick={() => setSelected(pedido)}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Enter" || event.key === " ") setSelected(pedido);
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                className={`group cursor-grab rounded-2xl border bg-cream p-4 text-left transition-all hover:border-burgundy/40 hover:shadow-soft active:cursor-grabbing ${
+                                  isRecentNew(pedido) ? "border-burgundy/45 ring-2 ring-burgundy/8" : "border-burgundy/12"
+                                } ${updatingId === pedido.id ? "opacity-60" : ""}`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex min-w-0 items-start gap-3">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-burgundy/10 font-serif text-lg font-bold text-burgundy">
+                                      {pedido.nome_cliente.charAt(0).toUpperCase()}
+                                    </span>
+                                    <div className="min-w-0">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <p className="truncate font-medium text-petrol">{pedido.nome_cliente}</p>
+                                        {isRecentNew(pedido) && (
+                                          <span className="rounded-full bg-burgundy/10 px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.18em] text-burgundy">
+                                            Novo
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="mt-1 text-xs text-petrol/50">{pedido.telefone}</p>
+                                    </div>
+                                  </div>
+                                  <GripVertical size={15} className="mt-1 shrink-0 text-petrol/25 transition-colors group-hover:text-burgundy/60" />
+                                </div>
+
+                                <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-petrol/70">{resumoPedido(pedido)}</p>
+
+                                <div className="mt-4 grid gap-2 text-xs text-petrol/55">
+                                  <span className="flex items-center gap-2">
+                                    <CalendarDays size={13} className="text-burgundy/50" />
+                                    Evento em {fmtDate(pedido.data_evento)}
+                                  </span>
+                                  <span className="flex items-center gap-2">
+                                    <Clock size={13} className="text-burgundy/50" />
+                                    Criado em {new Date(pedido.created_at).toLocaleDateString("pt-BR")}
+                                  </span>
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-between gap-3 border-t border-burgundy/8 pt-3">
+                                  <span className={`rounded-full px-2.5 py-1 text-[0.58rem] font-medium uppercase tracking-[0.18em] ${statusPill[pedido.status]}`}>
+                                    {statusLabels[pedido.status]}
+                                  </span>
+                                  <strong className="text-sm text-burgundy">
+                                    {pedido.valor_total != null ? fmtMoney(Number(pedido.valor_total)) : "Sem valor"}
+                                  </strong>
+                                </div>
+                              </article>
+                            ))
+                          )}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
-            {/* ══ ABA: ANÁLISES ══ */}
-            {activeTab === "analises" && <AnalyticsTab pedidos={pedidos} />}
+            {activeTab === "analises" && (
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-burgundy/12 bg-cream p-4 shadow-soft">
+                  <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div>
+                      <p className="text-[0.65rem] uppercase tracking-[0.25em] text-burgundy/70">Período de análise</p>
+                      <p className="mt-1 text-sm text-petrol/50">Os gráficos abaixo usam {analyticsPedidos.length} pedido{analyticsPedidos.length !== 1 ? "s" : ""} no recorte selecionado.</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {(["semana", "mes", "personalizado"] as const).map((period) => (
+                        <button
+                          key={period}
+                          onClick={() => setPeriodFilter(period)}
+                          className={`rounded-xl border px-3 py-2 text-[0.62rem] uppercase tracking-[0.18em] transition-all ${
+                            periodFilter === period
+                              ? "border-burgundy bg-burgundy text-cream"
+                              : "border-burgundy/20 text-petrol/60 hover:border-burgundy/50"
+                          }`}
+                        >
+                          {period === "semana" ? "Semana" : period === "mes" ? "Mês" : "Personalizado"}
+                        </button>
+                      ))}
+                      {periodFilter === "personalizado" && (
+                        <>
+                          <input
+                            type="date"
+                            value={customStart}
+                            onChange={(event) => setCustomStart(event.target.value)}
+                            className="rounded-xl border border-burgundy/15 bg-background px-3 py-2 text-sm text-petrol focus:outline-none"
+                          />
+                          <input
+                            type="date"
+                            value={customEnd}
+                            onChange={(event) => setCustomEnd(event.target.value)}
+                            className="rounded-xl border border-burgundy/15 bg-background px-3 py-2 text-sm text-petrol focus:outline-none"
+                          />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-            {/* ══ ABA: CLIENTES ══ */}
+                <section className="rounded-2xl border border-burgundy/12 bg-cream p-6 shadow-soft">
+                  <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Sparkles size={16} className="text-burgundy" />
+                        <p className="text-[0.65rem] uppercase tracking-[0.25em] text-burgundy/70">Insights inteligentes</p>
+                      </div>
+                      <h2 className="mt-2 font-serif text-2xl text-petrol">Leitura automática do negócio</h2>
+                    </div>
+                    <button
+                      onClick={() => carregarInsights(true)}
+                      disabled={insightLoading}
+                      className="rounded-xl border border-burgundy/30 px-3 py-2 text-[0.62rem] uppercase tracking-[0.18em] text-burgundy transition-colors hover:bg-burgundy hover:text-cream disabled:opacity-50"
+                    >
+                      {insightLoading ? "Analisando…" : "Atualizar IA"}
+                    </button>
+                  </div>
+
+                  {reportData?.insights ? (
+                    <div className="grid gap-5 lg:grid-cols-3">
+                      <div className="lg:col-span-3 rounded-xl bg-background p-4 text-sm leading-relaxed text-petrol/70">
+                        {reportData.insights.summary}
+                      </div>
+                      <InsightList title="Pontos fortes" items={reportData.insights.strengths} />
+                      <InsightList title="Oportunidades" items={reportData.insights.improvements} />
+                      <InsightList title="Ações sugeridas" items={reportData.insights.actions} />
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-burgundy/18 bg-background p-6 text-sm text-petrol/45">
+                      {insightLoading ? "Gerando análise com IA…" : "Abra esta aba para gerar uma leitura inteligente dos dados."}
+                    </div>
+                  )}
+                </section>
+
+                <AnalyticsTab pedidos={analyticsPedidos} />
+              </div>
+            )}
+
             {activeTab === "clientes" && <ClientesTab pedidos={pedidos} />}
           </>
         )}
       </div>
 
-      {/* ── Drawer de detalhe do pedido ── */}
       {selected && (
         <PedidoDetail
           pedido={selected}
@@ -372,6 +684,20 @@ const AdminDashboard = () => {
     </div>
   );
 };
+
+const InsightList = ({ title, items }: { title: string; items: string[] }) => (
+  <div className="rounded-xl bg-background p-4">
+    <p className="text-[0.62rem] uppercase tracking-[0.22em] text-burgundy/70">{title}</p>
+    <ul className="mt-3 space-y-2 text-sm leading-relaxed text-petrol/70">
+      {items.map((item) => (
+        <li key={item} className="flex gap-2">
+          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-burgundy/60" />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
 
 /* ════════════════════════════════════════════════ */
 /* Drawer lateral de pedido — preservado intacto  */
