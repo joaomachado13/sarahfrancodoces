@@ -149,7 +149,7 @@ const AdminDashboard = () => {
       .select("*")
       .order("created_at", { ascending: false });
     if (error) toast.error("Erro ao carregar pedidos: " + error.message);
-    else setPedidos(sortPedidos((data || []) as PedidoRow[]));
+    else setPedidos(sortPedidos((data || []) as unknown as PedidoRow[]));
     setLoading(false);
   }, []);
 
