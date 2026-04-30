@@ -55,6 +55,10 @@ export type PedidoRow = {
   created_at: string;
 };
 
+type PricedOrderItem = OrderItem & { valor?: number | null };
+
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "desconhecido";
+
 const statusLabels = {
   novo: "Novo",
   em_orcamento: "Em orçamento",
@@ -145,7 +149,7 @@ const AdminDashboard = () => {
       .select("*")
       .order("created_at", { ascending: false });
     if (error) toast.error("Erro ao carregar pedidos: " + error.message);
-    else setPedidos(sortPedidos((data as any) || []));
+    else setPedidos(sortPedidos((data || []) as PedidoRow[]));
     setLoading(false);
   }, []);
 
@@ -268,7 +272,7 @@ const AdminDashboard = () => {
       setReportData(data as PerformanceReportData);
       if (showToast) toast.success("Insights atualizados");
       return data as PerformanceReportData;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao gerar insights:", error);
       if (showToast) toast.error("Não foi possível atualizar os insights agora.");
       return null;
@@ -293,8 +297,8 @@ const AdminDashboard = () => {
       setReportData(data as PerformanceReportData);
       generatePerformanceReportPdf(data as PerformanceReportData, pedidos.slice(0, 8));
       toast.success("Relatório gerado com sucesso");
-    } catch (error: any) {
-      toast.error("Erro ao gerar relatório: " + (error?.message || "desconhecido"));
+    } catch (error: unknown) {
+      toast.error("Erro ao gerar relatório: " + getErrorMessage(error));
     } finally {
       setReportLoading(false);
     }
@@ -325,7 +329,7 @@ const AdminDashboard = () => {
   ) => {
     const { error } = await supabase
       .from("pedidos")
-      .update({ valor_total, observacoes_admin, itens: itens as any, status: "em_orcamento" })
+      .update({ valor_total, observacoes_admin, itens: itens as never, status: "em_orcamento" })
       .eq("id", id);
     if (error) { toast.error("Erro: " + error.message); return; }
     toast.success("Orçamento salvo");
