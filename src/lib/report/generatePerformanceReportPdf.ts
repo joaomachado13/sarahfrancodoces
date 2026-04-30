@@ -11,8 +11,16 @@ const CARD: [number, number, number] = [252, 249, 245];
 const fmtMoney = (value: number) => `R$ ${value.toFixed(2).replace(".", ",")}`;
 const fmtPct = (value: number) => `${value > 0 ? "+" : ""}${value.toFixed(1).replace(".", ",")}%`;
 const fmtDateTime = (iso: string) => new Date(iso).toLocaleString("pt-BR");
+type RecentPedido = {
+  nome_cliente: string;
+  data_evento: string;
+  status: "novo" | "em_orcamento" | "finalizado";
+  valor_total: number | null;
+  itens: unknown[];
+  created_at: string;
+};
 
-export const generatePerformanceReportPdf = (report: PerformanceReportData) => {
+export const generatePerformanceReportPdf = (report: PerformanceReportData, recentes: RecentPedido[] = []) => {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -246,6 +254,25 @@ export const generatePerformanceReportPdf = (report: PerformanceReportData) => {
 
   sectionTitle("Recomendações finais");
   bulletList(report.insights.actions);
+
+  if (recentes.length > 0) {
+    sectionTitle("Pedidos recentes");
+    recentes.slice(0, 8).forEach((pedido) => {
+      ensureSpace(42);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      setTextColor(PETROL);
+      doc.text(pedido.nome_cliente, margin, y);
+      doc.text(pedido.valor_total != null ? fmtMoney(Number(pedido.valor_total)) : "Sem valor", pageW - margin, y, { align: "right" });
+      y += 14;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      setTextColor(PETROL_SOFT);
+      const statusLabel = pedido.status === "novo" ? "Novo" : pedido.status === "em_orcamento" ? "Em orçamento" : "Finalizado";
+      doc.text(`${statusLabel} · evento ${new Date(`${pedido.data_evento}T00:00`).toLocaleDateString("pt-BR")} · ${pedido.itens.length} item(ns)`, margin, y);
+      y += 14;
+    });
+  }
 
   drawFooter();
   doc.save(`relatorio-desempenho-sarah-franco-${report.generatedAt.slice(0, 10)}.pdf`);
