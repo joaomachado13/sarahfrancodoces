@@ -137,7 +137,7 @@ const Pedido = () => {
 
       // Dispara notificação por email — não bloqueia o fluxo se falhar
       supabase.functions
-        .invoke("send-pedido-email", { body: parsed.data })
+        .invoke("send-pedido-email", { body: { ...parsed.data, id: inserted?.id } })
         .then(({ error: emailError }) => {
           if (emailError) {
             console.error("Falha ao enviar email do pedido:", emailError);
