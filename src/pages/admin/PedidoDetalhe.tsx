@@ -155,7 +155,7 @@ const PedidoDetalhe = () => {
         <Section icon={FileText} title="Orçamento e observações">
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Valor total" value={<span className="font-bold text-burgundy">{fmtMoney(pedido.valor_total)}</span>} />
-            <Field label="Última atualização" value={fmtDateTime(pedido.updated_at as any)} />
+            <Field label="Recebido em" value={fmtDateTime(pedido.created_at)} />
             <div className="sm:col-span-2"><Field label="Observações do admin" value={pedido.observacoes_admin} /></div>
           </dl>
         </Section>
