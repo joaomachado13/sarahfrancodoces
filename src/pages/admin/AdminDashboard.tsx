@@ -685,7 +685,13 @@ const AdminDashboard = () => {
       {selected && (
         <PedidoDetail
           pedido={selected}
-          onClose={() => setSelected(null)}
+          onClose={() => {
+            setSelected(null);
+            if (searchParams.get("id")) {
+              searchParams.delete("id");
+              setSearchParams(searchParams, { replace: true });
+            }
+          }}
           onStatus={(s) => updateStatus(selected.id, s)}
           onSaveOrcamento={(v, obs, itens) => updateValor(selected.id, v, obs, itens)}
         />
