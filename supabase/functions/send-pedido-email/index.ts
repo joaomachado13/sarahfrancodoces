@@ -1,5 +1,9 @@
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 
+const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_mail/gmail/v1";
+const TO_EMAIL = "sarahalfr@hotmail.com";
+const APP_BASE_URL = "https://sarahfrancodoces.lovable.app";
+
 interface DoceItem {
   tipo: "doce";
   quantidade: number;
@@ -20,6 +24,7 @@ interface BoloItem {
 type OrderItem = DoceItem | BoloItem;
 
 interface Payload {
+  id?: string;
   nome_cliente: string;
   telefone: string;
   endereco: string;
@@ -85,10 +90,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY is not configured");
-    }
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const GOOGLE_MAIL_API_KEY = Deno.env.get("GOOGLE_MAIL_API_KEY");
+    if (!GOOGLE_MAIL_API_KEY) throw new Error("GOOGLE_MAIL_API_KEY is not configured");
 
     const p = (await req.json()) as Payload;
 
@@ -114,6 +119,11 @@ Deno.serve(async (req) => {
 
     const itensHtml = p.itens.map(renderItem).join("");
     const itensText = p.itens.map(renderTextItem).join("\n\n");
+
+    const detalhesUrl = p.id ? `${APP_BASE_URL}/admin/pedidos/${p.id}` : null;
+    const linkHtml = detalhesUrl
+      ? `<p style="margin:26px 0 0;"><a href="${detalhesUrl}" style="display:inline-block;background:#5a1f2b;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;">Ver pedido completo no painel</a></p>`
+      : "";
 
     const html = `<!doctype html>
 <html><body style="margin:0;padding:0;background:#faf6f1;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;">
@@ -142,7 +152,8 @@ Deno.serve(async (req) => {
     <h2 style="font-size:15px;color:#5a1f2b;margin:22px 0 8px;text-transform:uppercase;letter-spacing:.5px;">Pedido</h2>
     <ul style="list-style:none;padding:0;margin:0;">${itensHtml}</ul>
 
-    <p style="margin:26px 0 0;color:#6b5a52;font-size:14px;">Acesse o sistema para criar o orçamento.</p>
+    ${linkHtml}
+    <p style="margin:18px 0 0;color:#6b5a52;font-size:14px;">Acesse o sistema para criar o orçamento.</p>
   </div>
 </body></html>`;
 
@@ -163,27 +174,52 @@ Logística:
 Pedido:
 ${itensText}
 
+${detalhesUrl ? `\n\nVer pedido completo: ${detalhesUrl}` : ""}
+
 Acesse o sistema para criar o orçamento.`;
 
-    const res = await fetch("https://api.resend.com/emails", {
+    // Build RFC 2822 MIME message (multipart/alternative for text + html)
+    const subject = "Novo pedido recebido 🍰";
+    const subjectEncoded = `=?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`;
+    const boundary = `b_${crypto.randomUUID().replace(/-/g, "")}`;
+    const mime = [
+      `To: ${TO_EMAIL}`,
+      `Subject: ${subjectEncoded}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      ``,
+      `--${boundary}`,
+      `Content-Type: text/plain; charset="UTF-8"`,
+      `Content-Transfer-Encoding: base64`,
+      ``,
+      btoa(unescape(encodeURIComponent(text))),
+      `--${boundary}`,
+      `Content-Type: text/html; charset="UTF-8"`,
+      `Content-Transfer-Encoding: base64`,
+      ``,
+      btoa(unescape(encodeURIComponent(html))),
+      `--${boundary}--`,
+    ].join("\r\n");
+
+    const raw = btoa(unescape(encodeURIComponent(mime)))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
+    const res = await fetch(`${GATEWAY_URL}/users/me/messages/send`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "X-Connection-Api-Key": GOOGLE_MAIL_API_KEY,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        from: "Sarah Franco <onboarding@resend.dev>",
-        to: ["jlammachado38@gmail.com"],
-        subject: "Novo pedido recebido 🍰",
-        html,
-        text,
-      }),
+      body: JSON.stringify({ raw }),
     });
 
     const data = await res.json();
     if (!res.ok) {
-      console.error("Resend error", res.status, data);
-      throw new Error(`Resend API failed [${res.status}]: ${JSON.stringify(data)}`);
+      console.error("Gmail API error", res.status, data);
+      throw new Error(`Gmail API failed [${res.status}]: ${JSON.stringify(data)}`);
     }
 
     return new Response(JSON.stringify({ success: true, id: data.id }), {
