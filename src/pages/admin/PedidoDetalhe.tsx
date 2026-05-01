@@ -60,7 +60,7 @@ const Section = ({ icon: Icon, title, children }: { icon: any; title: string; ch
   </section>
 );
 
-const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (
+const Field = ({ label, value }: { label: React.ReactNode; value: React.ReactNode }) => (
   <div>
     <dt className="text-xs uppercase tracking-wide text-petrol/60">{label}</dt>
     <dd className="mt-1 text-petrol">{value || "—"}</dd>
@@ -117,7 +117,7 @@ const PedidoDetalhe = () => {
         <Section icon={User} title="Cliente">
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Nome" value={pedido.nome_cliente} />
-            <Field label={<><Phone className="inline h-3 w-3" /> Telefone</> as any} value={pedido.telefone} />
+            <Field label={<span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> Telefone</span>} value={pedido.telefone} />
             <div className="sm:col-span-2"><Field label="Endereço" value={pedido.endereco} /></div>
           </dl>
         </Section>
