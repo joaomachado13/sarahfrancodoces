@@ -120,9 +120,9 @@ Deno.serve(async (req) => {
     const itensHtml = p.itens.map(renderItem).join("");
     const itensText = p.itens.map(renderTextItem).join("\n\n");
 
-    const detalhesUrl = p.id ? `${APP_BASE_URL}/admin/pedidos/${p.id}` : null;
+    const detalhesUrl = p.id ? `${APP_BASE_URL}/admin/pedidos?id=${p.id}` : null;
     const linkHtml = detalhesUrl
-      ? `<p style="margin:26px 0 0;"><a href="${detalhesUrl}" style="display:inline-block;background:#5a1f2b;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;">Ver pedido completo no painel</a></p>`
+      ? `<p style="margin:26px 0 0;"><a href="${detalhesUrl}" style="display:inline-block;background:#5a1f2b;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;">Abrir pedido e fazer orçamento</a></p>`
       : "";
 
     const html = `<!doctype html>
