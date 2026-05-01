@@ -8,7 +8,6 @@ import Pedido from "./pages/Pedido.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminLogin from "./pages/admin/AdminLogin.tsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.tsx";
-import PedidoDetalhe from "./pages/admin/PedidoDetalhe.tsx";
 import { RequireAdmin } from "./components/admin/RequireAdmin.tsx";
 import { WhatsAppFloat } from "./components/WhatsAppFloat.tsx";
 
@@ -29,14 +28,6 @@ const App = () => (
             element={
               <RequireAdmin>
                 <AdminDashboard />
-              </RequireAdmin>
-            }
-          />
-          <Route
-            path="/admin/pedidos/:id"
-            element={
-              <RequireAdmin>
-                <PedidoDetalhe />
               </RequireAdmin>
             }
           />
