@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { LayoutDashboard, BarChart3, Users, FileDown, Search, CalendarDays, Clock, Sparkles, TrendingUp, DollarSign, CheckCircle2, Timer, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -123,6 +123,7 @@ const sameDate = (left: string, right: string) => left === right;
 
 const AdminDashboard = () => {
   const { signOut, user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [pedidos, setPedidos] = useState<PedidoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("pedidos");
@@ -156,6 +157,14 @@ const AdminDashboard = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Abre automaticamente o pedido vindo via ?id=... (link do email)
+  useEffect(() => {
+    const id = searchParams.get("id");
+    if (!id || loading) return;
+    const found = pedidos.find((p) => p.id === id);
+    if (found && selected?.id !== id) setSelected(found);
+  }, [searchParams, pedidos, loading, selected?.id]);
 
   useEffect(() => {
     const channel = supabase
