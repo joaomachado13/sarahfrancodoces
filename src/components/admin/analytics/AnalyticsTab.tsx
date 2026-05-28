@@ -212,7 +212,7 @@ export function AnalyticsTab({ pedidos }: { pedidos: PedidoRow[] }) {
               <p className="text-[0.65rem] font-medium uppercase tracking-[0.28em] text-burgundy/70">
                 Faturamento
               </p>
-              <p className="mt-1 font-serif text-xl text-petrol">Últimos 6 meses</p>
+              <p className="mt-1 font-serif text-xl text-petrol">Desde maio/2026</p>
             </div>
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-burgundy/8">
               <BarChart3 size={16} className="text-burgundy" />
