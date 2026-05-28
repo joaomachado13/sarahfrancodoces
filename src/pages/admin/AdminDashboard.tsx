@@ -824,13 +824,13 @@ const PedidoDetail = ({
                   {it.tipo === "doce" ? (
                     <div className="mt-1 space-y-1 text-sm text-petrol/80">
                       <p>{it.quantidade} unidades · forminha: {it.corForminha || "—"}</p>
-                      <p>Sabores: {it.sabores || "—"}</p>
+                      <p>Sabores: {(Array.isArray((it as any).sabores) ? (it as any).sabores.join(", ") : (it as any).sabores) || "—"}</p>
                       {it.observacoes && <p className="text-petrol/60">Obs: {it.observacoes}</p>}
                     </div>
                   ) : (
                     <div className="mt-1 space-y-1 text-sm text-petrol/80">
                       <p>Tamanho: {it.tamanho || "—"}</p>
-                      <p>Massa: {it.massa || "—"} · Recheio: {it.recheio || "—"} · Cobertura: {it.cobertura || "—"}</p>
+                      <p>Massa: {it.massa || "—"} · Recheio: {(Array.isArray((it as any).recheios) ? (it as any).recheios.join(", ") : (it as any).recheio) || "—"} · Cobertura: {it.cobertura || "—"}</p>
                       {it.observacoes && <p className="text-petrol/60">Obs: {it.observacoes}</p>}
                     </div>
                   )}
