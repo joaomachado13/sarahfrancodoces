@@ -126,9 +126,14 @@ export function AnalyticsTab({ pedidos }: { pedidos: PedidoRow[] }) {
     const counts: Record<string, number> = {};
     pedidos.forEach((p) =>
       p.itens.forEach((it) => {
-        if (it.tipo === "doce" && it.sabores) {
-          it.sabores.split(",").forEach((s) => {
-            const key = s.trim();
+        if (it.tipo === "doce") {
+          const list = Array.isArray(it.sabores)
+            ? it.sabores
+            : typeof it.sabores === "string"
+              ? (it.sabores as string).split(",")
+              : [];
+          list.forEach((s) => {
+            const key = String(s).trim();
             if (key) counts[key] = (counts[key] || 0) + 1;
           });
         }
