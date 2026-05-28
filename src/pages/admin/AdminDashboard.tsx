@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { LayoutDashboard, BarChart3, Users, FileDown, Search, CalendarDays, Clock, Sparkles, TrendingUp, DollarSign, CheckCircle2, Timer, GripVertical } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, FileDown, Search, CalendarDays, Clock, Sparkles, TrendingUp, DollarSign, CheckCircle2, Timer, GripVertical, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-sarah-franco.png";
@@ -59,6 +59,9 @@ type PricedOrderItem = OrderItem & { valor?: number | null };
 
 const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "desconhecido";
 
+const ADMIN_START_DATE = "2026-05-01";
+const ADMIN_START_AT = new Date(`${ADMIN_START_DATE}T00:00:00`).getTime();
+
 const statusLabels = {
   novo: "Novo",
   em_orcamento: "Em orçamento",
@@ -68,10 +71,11 @@ const statusLabels = {
 const fmtMoney = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
-type Tab = "pedidos" | "analises" | "clientes";
+type Tab = "pedidos" | "calendario" | "analises" | "clientes";
 
 const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "pedidos", label: "Pedidos", icon: LayoutDashboard },
+  { id: "calendario", label: "Calendário", icon: CalendarDays },
   { id: "analises", label: "Análises", icon: BarChart3 },
   { id: "clientes", label: "Clientes", icon: Users },
 ];
@@ -97,28 +101,97 @@ const statusPanel = {
 
 const fmtDate = (date: string) => new Date(`${date}T00:00`).toLocaleDateString("pt-BR");
 
+const toText = (value: unknown): string => {
+  if (Array.isArray(value)) return value.map(toText).filter(Boolean).join(", ");
+  if (typeof value === "string") return value.trim();
+  if (value == null) return "";
+  if (typeof value === "number") return String(value);
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return toText(record.nome ?? record.name ?? record.label ?? record.titulo ?? record.value);
+  }
+  return "";
+};
+
 /** Lê o sabor de um doce (compatível com pedidos antigos que usavam `sabores`). */
 export const getSabor = (it: any): string => {
-  if (it?.sabor) return it.sabor;
-  if (Array.isArray(it?.sabores)) return it.sabores.filter(Boolean).join(", ");
-  if (typeof it?.sabores === "string") return it.sabores;
-  return "";
+  return toText(it?.sabor ?? it?.saborDoce ?? it?.sabor_doce ?? it?.sabores ?? it?.saboresSelecionados);
 };
 
 /** Lê o recheio de um bolo (compatível com `recheios` antigo). */
 export const getRecheio = (it: any): string => {
-  if (it?.recheio) return it.recheio;
-  if (Array.isArray(it?.recheios)) return it.recheios.filter(Boolean).join(", ");
-  if (typeof it?.recheios === "string") return it.recheios;
-  return "";
+  return toText(it?.recheio ?? it?.recheios);
 };
 
 /** Lê o adicional de um bolo (compatível com `adicionais` antigo). */
 export const getAdicional = (it: any): string => {
-  if (it?.adicional) return it.adicional;
-  if (Array.isArray(it?.adicionais)) return it.adicionais.filter(Boolean).join(", ");
-  if (typeof it?.adicionais === "string") return it.adicionais;
-  return "";
+  return toText(it?.adicional ?? it?.adicionais);
+};
+
+const normalizeItem = (item: unknown): OrderItem => {
+  const source = (item || {}) as Record<string, unknown>;
+  if (source.tipo === "bolo") {
+    return {
+      ...source,
+      tipo: "bolo",
+      tamanho: toText(source.tamanho),
+      massa: toText(source.massa),
+      recheio: getRecheio(source),
+      cobertura: toText(source.cobertura),
+      adicional: getAdicional(source),
+      observacoes: toText(source.observacoes),
+    } as OrderItem;
+  }
+
+  return {
+    ...source,
+    tipo: "doce",
+    quantidade: Number(source.quantidade || 0),
+    sabor: getSabor(source),
+    corForminha: toText(source.corForminha ?? source.cor_forminha),
+    observacoes: toText(source.observacoes),
+  } as OrderItem;
+};
+
+const normalizePedido = (pedido: PedidoRow): PedidoRow => ({
+  ...pedido,
+  itens: Array.isArray(pedido.itens) ? pedido.itens.map(normalizeItem) : [],
+});
+
+const getPedidoDeadline = (pedido: PedidoRow) => {
+  const date = pedido.tipo_logistica === "entrega"
+    ? pedido.data_entrega || pedido.data_evento
+    : pedido.data_retirada || pedido.data_evento;
+  const time = pedido.tipo_logistica === "entrega"
+    ? pedido.horario_entrega || pedido.horario_evento
+    : pedido.horario_retirada || pedido.horario_evento;
+  return new Date(`${date}T${time || "23:59"}`);
+};
+
+const getPedidoDateKey = (pedido: PedidoRow) => {
+  const deadline = getPedidoDeadline(pedido);
+  return Number.isNaN(deadline.getTime()) ? pedido.data_evento : deadline.toISOString().slice(0, 10);
+};
+
+const formatDeadline = (pedido: PedidoRow) =>
+  getPedidoDeadline(pedido).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
+const formatRemaining = (pedido: PedidoRow) => {
+  const diff = getPedidoDeadline(pedido).getTime() - Date.now();
+  const abs = Math.abs(diff);
+  const days = Math.floor(abs / 86_400_000);
+  const hours = Math.floor((abs % 86_400_000) / 3_600_000);
+  const minutes = Math.floor((abs % 3_600_000) / 60_000);
+  const text = days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
+  return diff < 0 ? `atrasado há ${text}` : `faltam ${text}`;
+};
+
+const urgencyClass = (pedido: PedidoRow) => {
+  const hours = (getPedidoDeadline(pedido).getTime() - Date.now()) / 3_600_000;
+  if (hours < 0) return "border-burgundy bg-burgundy/10 text-burgundy";
+  if (hours <= 24) return "border-burgundy/60 bg-burgundy/8 text-burgundy";
+  if (hours <= 72) return "border-gold/60 bg-gold/15 text-petrol";
+  return "border-petrol/15 bg-background text-petrol/70";
 };
 
 const itemSummary = (item: OrderItem) => {
