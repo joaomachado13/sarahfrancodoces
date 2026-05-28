@@ -993,11 +993,13 @@ const PedidoDetail = ({
   onClose,
   onStatus,
   onSaveOrcamento,
+  onDelete,
 }: {
   pedido: PedidoRow;
   onClose: () => void;
   onStatus: (s: PedidoRow["status"]) => void;
   onSaveOrcamento: (valor: number | null, obs: string | null, itens: OrderItem[]) => void;
+  onDelete: () => void;
 }) => {
   const [valor, setValor] = useState(pedido.valor_total?.toString() || "");
   const [obs, setObs] = useState(pedido.observacoes_admin || "");
@@ -1030,6 +1032,13 @@ const PedidoDetail = ({
             >
               {exporting ? "Gerando…" : "Baixar PDF"}
             </button>
+              <button
+                onClick={onDelete}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-burgundy/25 px-3 py-2 text-[0.62rem] uppercase tracking-[0.2em] text-burgundy transition-colors hover:bg-burgundy hover:text-cream"
+              >
+                <Trash2 size={13} />
+                Excluir
+              </button>
             <button onClick={onClose} className="text-xs uppercase tracking-[0.2em] text-petrol/60 hover:text-burgundy">
               fechar ✕
             </button>
