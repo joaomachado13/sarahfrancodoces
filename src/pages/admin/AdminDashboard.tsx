@@ -848,8 +848,7 @@ const PedidoDetail = ({
 
           <Block title="Orçamento">
             <div className="space-y-4">
-              <div className="flex items-end gap-3">
-                <label className="block flex-1">
+              <label className="block">
                   <span className="mb-2 block text-[0.65rem] uppercase tracking-[0.2em] text-petrol/60">
                     Valor total (R$)
                   </span>
@@ -863,15 +862,6 @@ const PedidoDetail = ({
                     placeholder="0,00"
                   />
                 </label>
-                <button
-                  type="button"
-                  onClick={aplicarSubtotal}
-                  className="rounded-xl border border-burgundy/30 px-3 py-3 text-[0.6rem] uppercase tracking-[0.2em] text-burgundy hover:bg-burgundy hover:text-cream"
-                  title="Somar valores dos itens"
-                >
-                  Σ R$ {subtotal.toFixed(2)}
-                </button>
-              </div>
               <label className="block">
                 <span className="mb-2 block text-[0.65rem] uppercase tracking-[0.2em] text-petrol/60">
                   Observações internas
