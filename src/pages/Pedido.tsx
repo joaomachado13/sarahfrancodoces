@@ -853,11 +853,11 @@ const StepReview = ({
             </p>
             {it.tipo === "doce" ? (
               <p className="mt-1 text-sm text-petrol/80">
-                {it.quantidade} unid. · {it.sabores || "(sabores a definir)"}
+                {it.quantidade} unid. · forminha {it.corForminha || "—"} · {it.sabores.join(", ") || "(sabores a definir)"}
               </p>
             ) : (
               <p className="mt-1 text-sm text-petrol/80">
-                {it.tamanho} · {it.massa} / {it.recheio} / {it.cobertura}
+                {it.tamanho} · {it.massa} / {it.recheios.join(", ") || "—"} / {it.cobertura}
               </p>
             )}
           </li>
