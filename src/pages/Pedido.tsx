@@ -532,7 +532,7 @@ const StepItems = ({
       {itens.map((item, idx) => (
         <div
           key={item.id}
-          className="rounded-xl border border-burgundy/20 bg-background p-6 shadow-sm"
+          className="rounded-xl border border-burgundy/20 bg-background p-4 shadow-sm md:p-6"
         >
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-burgundy">
