@@ -211,6 +211,7 @@ const Pedido = () => {
   const [enviando, setEnviando] = useState(false);
 
   const submit = async () => {
+    const pedidoId = crypto.randomUUID();
     const payload = {
       nome_cliente: cliente.nome,
       telefone: cliente.telefone,
@@ -235,16 +236,22 @@ const Pedido = () => {
 
     setEnviando(true);
     try {
-      const { data: inserted, error } = await supabase
+      const { error } = await supabase
         .from("pedidos")
-        .insert(parsed.data as any)
-        .select()
-        .single();
+        .insert({ id: pedidoId, ...parsed.data } as any);
       if (error) throw error;
+
+      const pedidoCriado = {
+        id: pedidoId,
+        ...parsed.data,
+        status: "novo",
+        observacoes_admin: null,
+        created_at: new Date().toISOString(),
+      };
 
       // Dispara notificação por email — não bloqueia o fluxo se falhar
       supabase.functions
-        .invoke("send-pedido-email", { body: { ...parsed.data, id: inserted?.id } })
+        .invoke("send-pedido-email", { body: pedidoCriado })
         .then(({ error: emailError }) => {
           if (emailError) {
             console.error("Falha ao enviar email do pedido:", emailError);
@@ -253,28 +260,26 @@ const Pedido = () => {
         .catch((e) => console.error("Falha ao enviar email do pedido:", e));
 
       // Sincroniza com Google Sheets — não bloqueia o fluxo se falhar
-      if (inserted) {
-        supabase.functions
-          .invoke("sync-pedido-sheets", {
-            body: {
-              id: inserted.id,
-              nome_cliente: inserted.nome_cliente,
-              telefone: inserted.telefone,
-              tipo_logistica: inserted.tipo_logistica,
-              data_evento: inserted.data_evento,
-              itens: inserted.itens,
-              status: inserted.status,
-              observacoes_admin: inserted.observacoes_admin,
-              created_at: inserted.created_at,
-            },
-          })
-          .then(({ error: sheetsError }) => {
-            if (sheetsError) {
-              console.error("Falha ao sincronizar com Sheets:", sheetsError);
-            }
-          })
-          .catch((e) => console.error("Falha ao sincronizar com Sheets:", e));
-      }
+      supabase.functions
+        .invoke("sync-pedido-sheets", {
+          body: {
+            id: pedidoCriado.id,
+            nome_cliente: pedidoCriado.nome_cliente,
+            telefone: pedidoCriado.telefone,
+            tipo_logistica: pedidoCriado.tipo_logistica,
+            data_evento: pedidoCriado.data_evento,
+            itens: pedidoCriado.itens,
+            status: pedidoCriado.status,
+            observacoes_admin: pedidoCriado.observacoes_admin,
+            created_at: pedidoCriado.created_at,
+          },
+        })
+        .then(({ error: sheetsError }) => {
+          if (sheetsError) {
+            console.error("Falha ao sincronizar com Sheets:", sheetsError);
+          }
+        })
+        .catch((e) => console.error("Falha ao sincronizar com Sheets:", e));
 
       toast.success("Pedido enviado! Entraremos em contato em breve.");
       setTimeout(() => navigate("/"), 1500);
