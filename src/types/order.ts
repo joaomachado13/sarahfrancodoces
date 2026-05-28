@@ -65,3 +65,10 @@ export const newBolo = (): BoloItem => ({
   cobertura: "",
   observacoes: "",
 });
+
+/** Normaliza campo que pode vir como string (pedidos antigos) ou string[] (novos). */
+export const asList = (v: unknown): string[] => {
+  if (Array.isArray(v)) return v.filter(Boolean).map(String);
+  if (typeof v === "string") return v.split(",").map((s) => s.trim()).filter(Boolean);
+  return [];
+};
