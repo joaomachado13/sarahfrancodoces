@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo-sarah-franco.png";
+import { SEO } from "@/components/SEO";
 import {
   CustomerData,
   EventData,

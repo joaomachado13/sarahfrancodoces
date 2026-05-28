@@ -6,10 +6,16 @@ import { Process } from "@/components/landing/Process";
 import { Testimonials } from "@/components/landing/Testimonials";
 import { InstagramGrid } from "@/components/landing/InstagramGrid";
 import { CtaFooter } from "@/components/landing/CtaFooter";
+import { SEO } from "@/components/SEO";
 
 const Index = () => {
   return (
     <main className="min-h-screen bg-background">
+      <SEO
+        title="Sarah Franco — Doces & Bolos Artesanais Premium"
+        description="Confeitaria artesanal premium. Bolos e doces 100% personalizados para casamentos, aniversários e eventos especiais."
+        path="/"
+      />
       <Navbar />
       <Hero />
       <About />

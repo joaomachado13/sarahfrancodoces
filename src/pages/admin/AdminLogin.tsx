@@ -5,6 +5,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-sarah-franco.png";
+import { SEO } from "@/components/SEO";
 
 const credSchema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255),
