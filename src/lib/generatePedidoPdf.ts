@@ -209,7 +209,13 @@ export const generatePedidoPdf = (pedido: PedidoPdf) => {
       if (it.tipo !== "doce") return;
       const body = [
         `Quantidade: ${it.quantidade} unidades`,
-        `Sabores: ${it.sabores || "—"}`,
+        `Sabor: ${
+          (it as any).sabor ||
+          (Array.isArray((it as any).sabores)
+            ? (it as any).sabores.join(", ")
+            : (it as any).sabores) ||
+          "—"
+        }`,
         `Cor da forminha: ${it.corForminha || "—"}`,
       ];
       if (it.observacoes) body.push(`Observações: ${it.observacoes}`);
@@ -225,9 +231,21 @@ export const generatePedidoPdf = (pedido: PedidoPdf) => {
       const body = [
         `Tamanho: ${it.tamanho || "—"}`,
         `Massa: ${it.massa || "—"}`,
-        `Recheio: ${(Array.isArray((it as any).recheios) ? (it as any).recheios.join(", ") : ((it as any).recheio || "")) || "—"}`,
+        `Recheio: ${
+          (it as any).recheio ||
+          (Array.isArray((it as any).recheios)
+            ? (it as any).recheios.join(", ")
+            : "") ||
+          "—"
+        }`,
         `Cobertura: ${it.cobertura || "—"}`,
       ];
+      const adicional =
+        (it as any).adicional ||
+        (Array.isArray((it as any).adicionais)
+          ? (it as any).adicionais.join(", ")
+          : "");
+      if (adicional) body.push(`Adicional: ${adicional}`);
       if (it.observacoes) body.push(`Observações: ${it.observacoes}`);
       itemBox(`Bolo ${idx + 1}`, body, (it as any).valor ?? null);
     });

@@ -269,7 +269,13 @@ export function ClientesTab({ pedidos }: { pedidos: PedidoRow[] }) {
                         >
                           {it.tipo === "bolo"
                             ? `🎂 Bolo ${it.massa || ""}`
-                            : `🍬 ${it.quantidade || ""}× ${it.sabores || "Doce"}`}
+                            : `🍬 ${it.quantidade || ""}× ${
+                                (it as any).sabor ||
+                                (Array.isArray((it as any).sabores)
+                                  ? (it as any).sabores.join(", ")
+                                  : (it as any).sabores) ||
+                                "Doce"
+                              }`}
                         </span>
                       ))}
                     </div>

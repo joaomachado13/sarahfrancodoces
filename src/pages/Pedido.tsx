@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -29,6 +29,7 @@ const pedidoSchema = z.object({
   data_retirada: z.string().nullable(),
   horario_retirada: z.string().nullable(),
   itens: z.array(z.any()).min(1),
+  inspiracao_urls: z.array(z.string().url()).max(10).optional(),
 });
 
 const stepLabels = ["Você", "Evento", "Entrega", "Pedido", "Revisão"];
@@ -109,23 +110,7 @@ const DOCES_CATEGORIAS: { titulo: string; itens: string[] }[] = [
   { titulo: "Finos", itens: DOCES_FINOS },
 ];
 
-const CORES_FORMINHA = [
-  "Dourada",
-  "Rosé",
-  "Branca",
-  "Preta",
-  "Vermelha",
-  "Bordô",
-  "Prata",
-  "Marfim",
-];
-
-const TAMANHOS_BOLO = [
-  "P — até 20 fatias (~1,5kg)",
-  "M — até 40 fatias (~2,5kg)",
-  "G — até 60 fatias (~4kg)",
-  "GG — 80+ fatias (5kg+)",
-];
+/* forminha e tamanho do bolo viraram texto livre */
 
 const Pedido = () => {
   const navigate = useNavigate();
@@ -143,6 +128,7 @@ const Pedido = () => {
     retirada: { data: "", horario: "" },
   });
   const [itens, setItens] = useState<OrderItem[]>([newDoce()]);
+  const [inspiracoes, setInspiracoes] = useState<string[]>([]);
 
   const updateItem = (id: string, patch: Partial<OrderItem>) => {
     setItens((prev) =>
@@ -194,19 +180,19 @@ const Pedido = () => {
             toast.error(`${tag}: informe a quantidade.`);
             return;
           }
-          if (!it.sabores || it.sabores.length === 0) {
-            toast.error(`${tag}: escolha ao menos um sabor.`);
+          if (!it.sabor) {
+            toast.error(`${tag}: escolha o sabor.`);
             return;
           }
-          if (!it.corForminha) {
-            toast.error(`${tag}: escolha a cor da forminha.`);
+          if (!it.corForminha.trim()) {
+            toast.error(`${tag}: informe a cor da forminha.`);
             return;
           }
         } else {
-          if (!it.tamanho) { toast.error(`${tag}: escolha o tamanho do bolo.`); return; }
+          if (!it.tamanho.trim()) { toast.error(`${tag}: informe o tamanho do bolo (em kg).`); return; }
           if (!it.massa) { toast.error(`${tag}: escolha a massa.`); return; }
-          if (!it.recheios || it.recheios.length === 0) {
-            toast.error(`${tag}: escolha ao menos um recheio.`);
+          if (!it.recheio) {
+            toast.error(`${tag}: escolha o recheio.`);
             return;
           }
           if (!it.cobertura) { toast.error(`${tag}: escolha a cobertura.`); return; }
@@ -238,6 +224,7 @@ const Pedido = () => {
       data_retirada: logistica.modo === "retirada" ? logistica.retirada?.data ?? null : null,
       horario_retirada: logistica.modo === "retirada" ? logistica.retirada?.horario ?? null : null,
       itens,
+      inspiracao_urls: inspiracoes,
     };
 
     const parsed = pedidoSchema.safeParse(payload);
@@ -392,6 +379,8 @@ const Pedido = () => {
                 evento={evento}
                 logistica={logistica}
                 itens={itens}
+                inspiracoes={inspiracoes}
+                setInspiracoes={setInspiracoes}
               />
             )}
 
@@ -705,12 +694,6 @@ const DoceFields = ({
   item: DoceItem;
   updateItem: (id: string, patch: Partial<OrderItem>) => void;
 }) => {
-  const toggleSabor = (s: string) => {
-    const has = item.sabores.includes(s);
-    updateItem(item.id, {
-      sabores: has ? item.sabores.filter((x) => x !== s) : [...item.sabores, s],
-    });
-  };
   return (
     <div className="space-y-5">
       <div className="grid gap-5 md:grid-cols-2">
@@ -724,29 +707,23 @@ const DoceFields = ({
           />
         </Field>
         <Field label="Cor da forminha *">
-          <ChipGroup
-            options={CORES_FORMINHA}
-            selected={item.corForminha ? [item.corForminha] : []}
-            onToggle={(v) => updateItem(item.id, { corForminha: v })}
-            single
+          <input
+            className={inputCls}
+            value={item.corForminha}
+            onChange={(e) => updateItem(item.id, { corForminha: e.target.value })}
+            placeholder="Ex.: dourada, rosé, branca…"
           />
         </Field>
       </div>
-      <div>
-        <span className="mb-2 block text-[0.7rem] font-semibold uppercase tracking-[0.25em] text-petrol">
-          Sabores * {item.sabores.length > 0 ? `(${item.sabores.length} selecionados)` : ""}
-        </span>
-        <div className="space-y-4">
-          {DOCES_CATEGORIAS.map((cat) => (
-            <div key={cat.titulo}>
-              <p className="mb-2 text-[0.65rem] uppercase tracking-[0.22em] text-burgundy/80">
-                {cat.titulo}
-              </p>
-              <ChipGroup options={cat.itens} selected={item.sabores} onToggle={toggleSabor} />
-            </div>
-          ))}
-        </div>
-      </div>
+      <Field label="Sabor *">
+        <PickerButton
+          value={item.sabor}
+          placeholder="Escolher sabor"
+          groups={DOCES_CATEGORIAS.map((c) => ({ titulo: c.titulo, itens: c.itens }))}
+          onPick={(v) => updateItem(item.id, { sabor: v })}
+          title="Escolha um sabor"
+        />
+      </Field>
       <Field label="Observações (opcional)">
         <textarea
           rows={2}
@@ -767,27 +744,14 @@ const BoloFields = ({
   item: BoloItem;
   updateItem: (id: string, patch: Partial<OrderItem>) => void;
 }) => {
-  const toggleRecheio = (s: string) => {
-    const has = item.recheios.includes(s);
-    updateItem(item.id, {
-      recheios: has ? item.recheios.filter((x) => x !== s) : [...item.recheios, s],
-    });
-  };
-  const toggleAdicional = (s: string) => {
-    const list = item.adicionais ?? [];
-    const has = list.includes(s);
-    updateItem(item.id, {
-      adicionais: has ? list.filter((x) => x !== s) : [...list, s],
-    });
-  };
   return (
     <div className="space-y-5">
-      <Field label="Tamanho *">
-        <ChipGroup
-          options={TAMANHOS_BOLO}
-          selected={item.tamanho ? [item.tamanho] : []}
-          onToggle={(v) => updateItem(item.id, { tamanho: v })}
-          single
+      <Field label="Tamanho do bolo * (em kg)">
+        <input
+          className={inputCls}
+          value={item.tamanho}
+          onChange={(e) => updateItem(item.id, { tamanho: e.target.value })}
+          placeholder="Ex.: 3 kg, 5 kg, 10 kg…"
         />
       </Field>
       <Field label="Massa *">
@@ -798,19 +762,33 @@ const BoloFields = ({
           single
         />
       </Field>
-      <Field label={`Recheios * ${item.recheios.length > 0 ? `(${item.recheios.length} selecionados)` : ""}`}>
-        <ChipGroup options={RECHEIOS_BOLO} selected={item.recheios} onToggle={toggleRecheio} />
-      </Field>
-      <Field label="Cobertura *">
-        <ChipGroup
-          options={COBERTURAS_BOLO}
-          selected={item.cobertura ? [item.cobertura] : []}
-          onToggle={(v) => updateItem(item.id, { cobertura: v })}
-          single
+      <Field label="Recheio *">
+        <PickerButton
+          value={item.recheio}
+          placeholder="Escolher recheio"
+          groups={[{ titulo: "Recheios", itens: RECHEIOS_BOLO }]}
+          onPick={(v) => updateItem(item.id, { recheio: v })}
+          title="Escolha um recheio"
         />
       </Field>
-      <Field label={`Adicionais (opcional) ${item.adicionais?.length ? `(${item.adicionais.length} selecionados)` : ""}`}>
-        <ChipGroup options={ADICIONAIS_BOLO} selected={item.adicionais ?? []} onToggle={toggleAdicional} />
+      <Field label="Cobertura *">
+        <PickerButton
+          value={item.cobertura}
+          placeholder="Escolher cobertura"
+          groups={[{ titulo: "Coberturas", itens: COBERTURAS_BOLO }]}
+          onPick={(v) => updateItem(item.id, { cobertura: v })}
+          title="Escolha uma cobertura"
+        />
+      </Field>
+      <Field label="Adicional (opcional)">
+        <PickerButton
+          value={item.adicional}
+          placeholder="Nenhum"
+          groups={[{ titulo: "Adicionais", itens: ADICIONAIS_BOLO }]}
+          onPick={(v) => updateItem(item.id, { adicional: v })}
+          title="Escolha um adicional"
+          allowClear
+        />
       </Field>
       <Field label="Observações (opcional)">
         <textarea
@@ -864,11 +842,15 @@ const StepReview = ({
   evento,
   logistica,
   itens,
+  inspiracoes,
+  setInspiracoes,
 }: {
   cliente: CustomerData;
   evento: EventData;
   logistica: LogisticsData;
   itens: OrderItem[];
+  inspiracoes: string[];
+  setInspiracoes: React.Dispatch<React.SetStateAction<string[]>>;
 }) => (
   <div className="space-y-8">
     <SectionTitle
@@ -908,16 +890,20 @@ const StepReview = ({
             </p>
             {it.tipo === "doce" ? (
               <p className="mt-1 text-sm text-petrol/80">
-                {it.quantidade} unid. · forminha {it.corForminha || "—"} · {it.sabores.join(", ") || "(sabores a definir)"}
+                {it.quantidade} unid. · forminha {it.corForminha || "—"} · {it.sabor || "(sabor a definir)"}
               </p>
             ) : (
               <p className="mt-1 text-sm text-petrol/80">
-                {it.tamanho} · {it.massa} / {it.recheios.join(", ") || "—"} / {it.cobertura}
+                {it.tamanho} · {it.massa} / {it.recheio || "—"} / {it.cobertura}
+                {it.adicional ? ` + ${it.adicional}` : ""}
               </p>
             )}
           </li>
         ))}
       </ul>
+    </ReviewBlock>
+    <ReviewBlock title="Inspirações (opcional)">
+      <InspiracoesUploader urls={inspiracoes} setUrls={setInspiracoes} />
     </ReviewBlock>
   </div>
 );
@@ -951,3 +937,225 @@ const ReviewBlock = ({
 );
 
 export default Pedido;
+
+/* ===== Picker modal (single-select com grupos) ===== */
+const PickerButton = ({
+  value,
+  placeholder,
+  groups,
+  onPick,
+  title,
+  allowClear = false,
+}: {
+  value: string;
+  placeholder: string;
+  groups: { titulo: string; itens: string[] }[];
+  onPick: (v: string) => void;
+  title: string;
+  allowClear?: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm transition-colors ${
+          value
+            ? "border-burgundy bg-burgundy/5 text-petrol"
+            : "border-burgundy/25 bg-background text-petrol/55 hover:border-burgundy"
+        }`}
+      >
+        <span className="truncate">{value || placeholder}</span>
+        <span className="ml-3 text-[0.65rem] uppercase tracking-[0.22em] text-burgundy">
+          {value ? "trocar" : "escolher"}
+        </span>
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-petrol/40 backdrop-blur-sm md:items-center"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-t-2xl border border-burgundy/15 bg-cream shadow-elegant md:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-burgundy/15 px-5 py-4">
+              <h3 className="font-serif text-lg text-petrol">{title}</h3>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-[0.65rem] uppercase tracking-[0.22em] text-petrol/70 hover:text-burgundy"
+              >
+                fechar ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {groups.map((g) => (
+                <div key={g.titulo} className="mb-4 last:mb-0">
+                  {groups.length > 1 && (
+                    <p className="mb-2 text-[0.65rem] uppercase tracking-[0.22em] text-burgundy/80">
+                      {g.titulo}
+                    </p>
+                  )}
+                  <div className="flex flex-col gap-1.5">
+                    {g.itens.map((opt) => {
+                      const active = value === opt;
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            onPick(opt);
+                            setOpen(false);
+                          }}
+                          className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                            active
+                              ? "border-burgundy bg-burgundy text-cream"
+                              : "border-burgundy/15 bg-background text-petrol hover:border-burgundy hover:bg-burgundy/5"
+                          }`}
+                        >
+                          <span>{opt}</span>
+                          {active && <span>✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {allowClear && value && (
+              <div className="border-t border-burgundy/15 px-5 py-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onPick("");
+                    setOpen(false);
+                  }}
+                  className="text-[0.65rem] uppercase tracking-[0.22em] text-petrol/70 hover:text-burgundy"
+                >
+                  remover seleção
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+/* ===== Upload de inspirações ===== */
+const InspiracoesUploader = ({
+  urls,
+  setUrls,
+}: {
+  urls: string[];
+  setUrls: React.Dispatch<React.SetStateAction<string[]>>;
+}) => {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const remaining = 10 - urls.length;
+    if (remaining <= 0) {
+      toast.error("Máximo de 10 fotos de inspiração.");
+      return;
+    }
+    const toUpload = Array.from(files).slice(0, remaining);
+    setUploading(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of toUpload) {
+        if (!file.type.startsWith("image/")) {
+          toast.error(`"${file.name}" não é uma imagem.`);
+          continue;
+        }
+        if (file.size > 8 * 1024 * 1024) {
+          toast.error(`"${file.name}" passa de 8MB.`);
+          continue;
+        }
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await supabase.storage
+          .from("pedido-inspiracoes")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (error) {
+          console.error(error);
+          toast.error(`Falha ao enviar "${file.name}".`);
+          continue;
+        }
+        const { data } = supabase.storage.from("pedido-inspiracoes").getPublicUrl(path);
+        uploaded.push(data.publicUrl);
+      }
+      if (uploaded.length) {
+        setUrls((prev) => [...prev, ...uploaded]);
+        toast.success(`${uploaded.length} foto(s) enviada(s).`);
+      }
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-petrol/70">
+        Envie fotos de referência (Pinterest, prints, fotos suas) para a Sarah entender o estilo
+        que você imagina. Até 10 imagens, 8MB cada.
+      </p>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading || urls.length >= 10}
+        className="rounded-xl border border-burgundy bg-burgundy/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-burgundy transition-all hover:bg-burgundy hover:text-cream disabled:opacity-50"
+      >
+        {uploading ? "Enviando..." : `+ adicionar fotos (${urls.length}/10)`}
+      </button>
+
+      {urls.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {urls.map((u, i) => (
+            <div
+              key={u}
+              className="group relative aspect-square overflow-hidden rounded-lg border border-burgundy/20"
+            >
+              <img src={u} alt={`Inspiração ${i + 1}`} className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setUrls((prev) => prev.filter((x) => x !== u))}
+                className="absolute right-1 top-1 rounded-full bg-petrol/80 px-2 py-0.5 text-[0.6rem] text-cream opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                remover
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
