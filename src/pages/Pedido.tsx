@@ -773,6 +773,13 @@ const BoloFields = ({
       recheios: has ? item.recheios.filter((x) => x !== s) : [...item.recheios, s],
     });
   };
+  const toggleAdicional = (s: string) => {
+    const list = item.adicionais ?? [];
+    const has = list.includes(s);
+    updateItem(item.id, {
+      adicionais: has ? list.filter((x) => x !== s) : [...list, s],
+    });
+  };
   return (
     <div className="space-y-5">
       <Field label="Tamanho *">
@@ -801,6 +808,9 @@ const BoloFields = ({
           onToggle={(v) => updateItem(item.id, { cobertura: v })}
           single
         />
+      </Field>
+      <Field label={`Adicionais (opcional) ${item.adicionais?.length ? `(${item.adicionais.length} selecionados)` : ""}`}>
+        <ChipGroup options={ADICIONAIS_BOLO} selected={item.adicionais ?? []} onToggle={toggleAdicional} />
       </Field>
       <Field label="Observações (opcional)">
         <textarea
