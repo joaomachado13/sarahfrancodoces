@@ -97,19 +97,39 @@ const statusPanel = {
 
 const fmtDate = (date: string) => new Date(`${date}T00:00`).toLocaleDateString("pt-BR");
 
+/** Lê o sabor de um doce (compatível com pedidos antigos que usavam `sabores`). */
+export const getSabor = (it: any): string => {
+  if (it?.sabor) return it.sabor;
+  if (Array.isArray(it?.sabores)) return it.sabores.filter(Boolean).join(", ");
+  if (typeof it?.sabores === "string") return it.sabores;
+  return "";
+};
+
+/** Lê o recheio de um bolo (compatível com `recheios` antigo). */
+export const getRecheio = (it: any): string => {
+  if (it?.recheio) return it.recheio;
+  if (Array.isArray(it?.recheios)) return it.recheios.filter(Boolean).join(", ");
+  if (typeof it?.recheios === "string") return it.recheios;
+  return "";
+};
+
+/** Lê o adicional de um bolo (compatível com `adicionais` antigo). */
+export const getAdicional = (it: any): string => {
+  if (it?.adicional) return it.adicional;
+  if (Array.isArray(it?.adicionais)) return it.adicionais.filter(Boolean).join(", ");
+  if (typeof it?.adicionais === "string") return it.adicionais;
+  return "";
+};
+
 const itemSummary = (item: OrderItem) => {
   if (item.tipo === "bolo") {
-    const recheio = Array.isArray((item as any).recheios)
-      ? (item as any).recheios.join(", ")
-      : (item as any).recheio || "";
+    const recheio = getRecheio(item);
     return ["Bolo", item.tamanho, item.massa && `massa ${item.massa}`, recheio && `recheio ${recheio}`]
       .filter(Boolean)
       .join(" · ");
   }
-  const sabores = Array.isArray((item as any).sabores)
-    ? (item as any).sabores.join(", ")
-    : (item as any).sabores || "";
-  return [`${item.quantidade || 0} doces`, sabores].filter(Boolean).join(" · ");
+  const sabor = getSabor(item);
+  return [`${item.quantidade || 0} doces`, sabor].filter(Boolean).join(" · ");
 };
 
 const resumoPedido = (pedido: PedidoRow) => {
