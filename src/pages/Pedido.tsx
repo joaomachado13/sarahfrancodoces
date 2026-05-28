@@ -732,9 +732,21 @@ const DoceFields = ({
           />
         </Field>
       </div>
-      <Field label={`Sabores * ${item.sabores.length > 0 ? `(${item.sabores.length} selecionados)` : ""}`}>
-        <ChipGroup options={SABORES_DOCES} selected={item.sabores} onToggle={toggleSabor} />
-      </Field>
+      <div>
+        <span className="mb-2 block text-[0.7rem] font-semibold uppercase tracking-[0.25em] text-petrol">
+          Sabores * {item.sabores.length > 0 ? `(${item.sabores.length} selecionados)` : ""}
+        </span>
+        <div className="space-y-4">
+          {DOCES_CATEGORIAS.map((cat) => (
+            <div key={cat.titulo}>
+              <p className="mb-2 text-[0.65rem] uppercase tracking-[0.22em] text-burgundy/80">
+                {cat.titulo}
+              </p>
+              <ChipGroup options={cat.itens} selected={item.sabores} onToggle={toggleSabor} />
+            </div>
+          ))}
+        </div>
+      </div>
       <Field label="Observações (opcional)">
         <textarea
           rows={2}
