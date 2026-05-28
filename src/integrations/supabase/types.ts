@@ -26,6 +26,7 @@ export type Database = {
           horario_evento: string
           horario_retirada: string | null
           id: string
+          inspiracao_urls: string[]
           itens: Json
           nome_cliente: string
           observacoes_admin: string | null
@@ -46,6 +47,7 @@ export type Database = {
           horario_evento: string
           horario_retirada?: string | null
           id?: string
+          inspiracao_urls?: string[]
           itens?: Json
           nome_cliente: string
           observacoes_admin?: string | null
@@ -66,6 +68,7 @@ export type Database = {
           horario_evento?: string
           horario_retirada?: string | null
           id?: string
+          inspiracao_urls?: string[]
           itens?: Json
           nome_cliente?: string
           observacoes_admin?: string | null
