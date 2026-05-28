@@ -127,10 +127,14 @@ export function AnalyticsTab({ pedidos }: { pedidos: PedidoRow[] }) {
     pedidos.forEach((p) =>
       p.itens.forEach((it) => {
         if (it.tipo === "doce") {
-          const list = Array.isArray(it.sabores)
-            ? it.sabores
-            : typeof it.sabores === "string"
-              ? (it.sabores as string).split(",")
+          const raw =
+            (it as any).sabor ??
+            (it as any).sabores ??
+            "";
+          const list = Array.isArray(raw)
+            ? raw
+            : typeof raw === "string"
+              ? raw.split(",")
               : [];
           list.forEach((s) => {
             const key = String(s).trim();
