@@ -33,6 +33,7 @@ export interface BoloItem {
   massa: string;
   recheios: string[];
   cobertura: string;
+  adicionais: string[];
   observacoes: string;
 }
 
@@ -63,6 +64,7 @@ export const newBolo = (): BoloItem => ({
   massa: "",
   recheios: [],
   cobertura: "",
+  adicionais: [],
   observacoes: "",
 });
 
