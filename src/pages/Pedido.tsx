@@ -756,8 +756,8 @@ const SectionTitle = ({
   subtitle: string;
 }) => (
   <div>
-    <h2 className="font-serif text-3xl text-petrol">{title}</h2>
-    <p className="mt-2 text-sm text-petrol/80">{subtitle}</p>
+    <h2 className="font-serif text-2xl text-petrol md:text-3xl">{title}</h2>
+    <p className="mt-1.5 text-sm text-petrol/80 md:mt-2">{subtitle}</p>
   </div>
 );
 
