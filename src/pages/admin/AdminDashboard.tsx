@@ -169,8 +169,9 @@ const getPedidoDeadline = (pedido: PedidoRow) => {
 };
 
 const getPedidoDateKey = (pedido: PedidoRow) => {
-  const deadline = getPedidoDeadline(pedido);
-  return Number.isNaN(deadline.getTime()) ? pedido.data_evento : deadline.toISOString().slice(0, 10);
+  return pedido.tipo_logistica === "entrega"
+    ? pedido.data_entrega || pedido.data_evento
+    : pedido.data_retirada || pedido.data_evento;
 };
 
 const formatDeadline = (pedido: PedidoRow) =>
