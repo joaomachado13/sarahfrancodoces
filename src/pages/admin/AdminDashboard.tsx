@@ -734,23 +734,12 @@ const PedidoDetail = ({
   onStatus: (s: PedidoRow["status"]) => void;
   onSaveOrcamento: (valor: number | null, obs: string | null, itens: OrderItem[]) => void;
 }) => {
-  const [valoresItens, setValoresItens] = useState<Record<string, string>>(() =>
-    Object.fromEntries(
-      pedido.itens.map((it) => [it.id, (it as any).valor != null ? String((it as any).valor) : ""])
-    )
-  );
   const [valor, setValor] = useState(pedido.valor_total?.toString() || "");
   const [obs, setObs] = useState(pedido.observacoes_admin || "");
   const [exporting, setExporting] = useState(false);
 
-  const subtotal = Object.values(valoresItens).reduce((acc, v) => acc + (Number(v) || 0), 0);
-  const aplicarSubtotal = () => setValor(subtotal ? subtotal.toFixed(2) : "");
   const salvar = () => {
-    const itensComValor = pedido.itens.map((it) => ({
-      ...it,
-      valor: valoresItens[it.id] ? Number(valoresItens[it.id]) : null,
-    })) as OrderItem[];
-    onSaveOrcamento(valor ? Number(valor) : null, obs || null, itensComValor);
+    onSaveOrcamento(valor ? Number(valor) : null, obs || null, pedido.itens);
   };
 
   return (
