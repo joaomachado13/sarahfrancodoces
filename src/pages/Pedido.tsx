@@ -937,3 +937,225 @@ const ReviewBlock = ({
 );
 
 export default Pedido;
+
+/* ===== Picker modal (single-select com grupos) ===== */
+const PickerButton = ({
+  value,
+  placeholder,
+  groups,
+  onPick,
+  title,
+  allowClear = false,
+}: {
+  value: string;
+  placeholder: string;
+  groups: { titulo: string; itens: string[] }[];
+  onPick: (v: string) => void;
+  title: string;
+  allowClear?: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm transition-colors ${
+          value
+            ? "border-burgundy bg-burgundy/5 text-petrol"
+            : "border-burgundy/25 bg-background text-petrol/55 hover:border-burgundy"
+        }`}
+      >
+        <span className="truncate">{value || placeholder}</span>
+        <span className="ml-3 text-[0.65rem] uppercase tracking-[0.22em] text-burgundy">
+          {value ? "trocar" : "escolher"}
+        </span>
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-petrol/40 backdrop-blur-sm md:items-center"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-t-2xl border border-burgundy/15 bg-cream shadow-elegant md:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-burgundy/15 px-5 py-4">
+              <h3 className="font-serif text-lg text-petrol">{title}</h3>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-[0.65rem] uppercase tracking-[0.22em] text-petrol/70 hover:text-burgundy"
+              >
+                fechar ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {groups.map((g) => (
+                <div key={g.titulo} className="mb-4 last:mb-0">
+                  {groups.length > 1 && (
+                    <p className="mb-2 text-[0.65rem] uppercase tracking-[0.22em] text-burgundy/80">
+                      {g.titulo}
+                    </p>
+                  )}
+                  <div className="flex flex-col gap-1.5">
+                    {g.itens.map((opt) => {
+                      const active = value === opt;
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            onPick(opt);
+                            setOpen(false);
+                          }}
+                          className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                            active
+                              ? "border-burgundy bg-burgundy text-cream"
+                              : "border-burgundy/15 bg-background text-petrol hover:border-burgundy hover:bg-burgundy/5"
+                          }`}
+                        >
+                          <span>{opt}</span>
+                          {active && <span>✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {allowClear && value && (
+              <div className="border-t border-burgundy/15 px-5 py-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onPick("");
+                    setOpen(false);
+                  }}
+                  className="text-[0.65rem] uppercase tracking-[0.22em] text-petrol/70 hover:text-burgundy"
+                >
+                  remover seleção
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+/* ===== Upload de inspirações ===== */
+const InspiracoesUploader = ({
+  urls,
+  setUrls,
+}: {
+  urls: string[];
+  setUrls: React.Dispatch<React.SetStateAction<string[]>>;
+}) => {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const remaining = 10 - urls.length;
+    if (remaining <= 0) {
+      toast.error("Máximo de 10 fotos de inspiração.");
+      return;
+    }
+    const toUpload = Array.from(files).slice(0, remaining);
+    setUploading(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of toUpload) {
+        if (!file.type.startsWith("image/")) {
+          toast.error(`"${file.name}" não é uma imagem.`);
+          continue;
+        }
+        if (file.size > 8 * 1024 * 1024) {
+          toast.error(`"${file.name}" passa de 8MB.`);
+          continue;
+        }
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await supabase.storage
+          .from("pedido-inspiracoes")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (error) {
+          console.error(error);
+          toast.error(`Falha ao enviar "${file.name}".`);
+          continue;
+        }
+        const { data } = supabase.storage.from("pedido-inspiracoes").getPublicUrl(path);
+        uploaded.push(data.publicUrl);
+      }
+      if (uploaded.length) {
+        setUrls((prev) => [...prev, ...uploaded]);
+        toast.success(`${uploaded.length} foto(s) enviada(s).`);
+      }
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-petrol/70">
+        Envie fotos de referência (Pinterest, prints, fotos suas) para a Sarah entender o estilo
+        que você imagina. Até 10 imagens, 8MB cada.
+      </p>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading || urls.length >= 10}
+        className="rounded-xl border border-burgundy bg-burgundy/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-burgundy transition-all hover:bg-burgundy hover:text-cream disabled:opacity-50"
+      >
+        {uploading ? "Enviando..." : `+ adicionar fotos (${urls.length}/10)`}
+      </button>
+
+      {urls.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {urls.map((u, i) => (
+            <div
+              key={u}
+              className="group relative aspect-square overflow-hidden rounded-lg border border-burgundy/20"
+            >
+              <img src={u} alt={`Inspiração ${i + 1}`} className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setUrls((prev) => prev.filter((x) => x !== u))}
+                className="absolute right-1 top-1 rounded-full bg-petrol/80 px-2 py-0.5 text-[0.6rem] text-cream opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                remover
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
