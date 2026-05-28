@@ -540,6 +540,9 @@ const AdminDashboard = () => {
               {activeTab === "pedidos" && (
                 <>CRM de <span className="font-script text-burgundy">pedidos</span></>
               )}
+              {activeTab === "calendario" && (
+                <>Calendário de <span className="font-script text-burgundy">entregas</span></>
+              )}
               {activeTab === "analises" && (
                 <>Análises <span className="font-script text-burgundy">& Insights</span></>
               )}
@@ -807,6 +810,17 @@ const AdminDashboard = () => {
 
                 <AnalyticsTab pedidos={analyticsPedidos} />
               </div>
+            )}
+
+            {activeTab === "calendario" && (
+              <CalendarTab
+                pedidos={pedidos}
+                upcomingPedidos={upcomingPedidos}
+                calendarPedidosByDay={calendarPedidosByDay}
+                calendarMonth={calendarMonth}
+                setCalendarMonth={setCalendarMonth}
+                onSelectPedido={setSelected}
+              />
             )}
 
             {activeTab === "clientes" && <ClientesTab pedidos={pedidos} />}
