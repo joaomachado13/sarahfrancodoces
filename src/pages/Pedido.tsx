@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -29,6 +29,7 @@ const pedidoSchema = z.object({
   data_retirada: z.string().nullable(),
   horario_retirada: z.string().nullable(),
   itens: z.array(z.any()).min(1),
+  inspiracao_urls: z.array(z.string().url()).max(10).optional(),
 });
 
 const stepLabels = ["Você", "Evento", "Entrega", "Pedido", "Revisão"];
@@ -109,23 +110,7 @@ const DOCES_CATEGORIAS: { titulo: string; itens: string[] }[] = [
   { titulo: "Finos", itens: DOCES_FINOS },
 ];
 
-const CORES_FORMINHA = [
-  "Dourada",
-  "Rosé",
-  "Branca",
-  "Preta",
-  "Vermelha",
-  "Bordô",
-  "Prata",
-  "Marfim",
-];
-
-const TAMANHOS_BOLO = [
-  "P — até 20 fatias (~1,5kg)",
-  "M — até 40 fatias (~2,5kg)",
-  "G — até 60 fatias (~4kg)",
-  "GG — 80+ fatias (5kg+)",
-];
+/* forminha e tamanho do bolo viraram texto livre */
 
 const Pedido = () => {
   const navigate = useNavigate();
@@ -143,6 +128,7 @@ const Pedido = () => {
     retirada: { data: "", horario: "" },
   });
   const [itens, setItens] = useState<OrderItem[]>([newDoce()]);
+  const [inspiracoes, setInspiracoes] = useState<string[]>([]);
 
   const updateItem = (id: string, patch: Partial<OrderItem>) => {
     setItens((prev) =>
@@ -194,19 +180,19 @@ const Pedido = () => {
             toast.error(`${tag}: informe a quantidade.`);
             return;
           }
-          if (!it.sabores || it.sabores.length === 0) {
-            toast.error(`${tag}: escolha ao menos um sabor.`);
+          if (!it.sabor) {
+            toast.error(`${tag}: escolha o sabor.`);
             return;
           }
-          if (!it.corForminha) {
-            toast.error(`${tag}: escolha a cor da forminha.`);
+          if (!it.corForminha.trim()) {
+            toast.error(`${tag}: informe a cor da forminha.`);
             return;
           }
         } else {
-          if (!it.tamanho) { toast.error(`${tag}: escolha o tamanho do bolo.`); return; }
+          if (!it.tamanho.trim()) { toast.error(`${tag}: informe o tamanho do bolo (em kg).`); return; }
           if (!it.massa) { toast.error(`${tag}: escolha a massa.`); return; }
-          if (!it.recheios || it.recheios.length === 0) {
-            toast.error(`${tag}: escolha ao menos um recheio.`);
+          if (!it.recheio) {
+            toast.error(`${tag}: escolha o recheio.`);
             return;
           }
           if (!it.cobertura) { toast.error(`${tag}: escolha a cobertura.`); return; }
@@ -238,6 +224,7 @@ const Pedido = () => {
       data_retirada: logistica.modo === "retirada" ? logistica.retirada?.data ?? null : null,
       horario_retirada: logistica.modo === "retirada" ? logistica.retirada?.horario ?? null : null,
       itens,
+      inspiracao_urls: inspiracoes,
     };
 
     const parsed = pedidoSchema.safeParse(payload);
@@ -392,6 +379,8 @@ const Pedido = () => {
                 evento={evento}
                 logistica={logistica}
                 itens={itens}
+                inspiracoes={inspiracoes}
+                setInspiracoes={setInspiracoes}
               />
             )}
 
