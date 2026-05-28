@@ -22,6 +22,7 @@ type PedidoRow = {
 };
 
 const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const ADMIN_START_DATE = new Date("2026-05-01T00:00:00");
 
 function calcTrend(current: number, previous: number): number | undefined {
   if (previous === 0) return undefined;
@@ -76,7 +77,9 @@ export function AnalyticsTab({ pedidos }: { pedidos: PedidoRow[] }) {
   /* ── Dados por mês (últimos 6 meses) ── */
   const monthlyData = useMemo(() => {
     const months: { mes: string; faturamento: number; pedidos: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
+    const monthsSinceStart = (curYear - ADMIN_START_DATE.getFullYear()) * 12 + curMonth - ADMIN_START_DATE.getMonth() + 1;
+    const monthCount = Math.max(1, Math.min(6, monthsSinceStart));
+    for (let i = monthCount - 1; i >= 0; i--) {
       const d = new Date(curYear, curMonth - i, 1);
       const m = d.getMonth();
       const y = d.getFullYear();
@@ -224,7 +227,7 @@ export function AnalyticsTab({ pedidos }: { pedidos: PedidoRow[] }) {
             <p className="text-[0.65rem] font-medium uppercase tracking-[0.28em] text-burgundy/70">
               Volume
             </p>
-            <p className="mt-1 font-serif text-xl text-petrol">Pedidos por mês</p>
+            <p className="mt-1 font-serif text-xl text-petrol">Desde maio/2026</p>
           </div>
           <PedidosTrendChart data={monthlyData} />
         </div>
