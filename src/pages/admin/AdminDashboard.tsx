@@ -238,15 +238,17 @@ const AdminDashboard = () => {
   const [reportLoading, setReportLoading] = useState(false);
   const [insightLoading, setInsightLoading] = useState(false);
   const [reportData, setReportData] = useState<PerformanceReportData | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
 
   const sortPedidos = (rows: PedidoRow[]) =>
-    [...rows].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    [...rows].map(normalizePedido).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("pedidos")
       .select("*")
+      .gte("created_at", ADMIN_START_DATE)
       .order("created_at", { ascending: false });
     if (error) toast.error("Erro ao carregar pedidos: " + error.message);
     else setPedidos(sortPedidos((data || []) as unknown as PedidoRow[]));
@@ -273,11 +275,11 @@ const AdminDashboard = () => {
         { event: "*", schema: "public", table: "pedidos" },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            const next = payload.new as PedidoRow;
+            const next = normalizePedido(payload.new as PedidoRow);
             setPedidos((prev) => sortPedidos(prev.some((p) => p.id === next.id) ? prev : [next, ...prev]));
           }
           if (payload.eventType === "UPDATE") {
-            const next = payload.new as PedidoRow;
+            const next = normalizePedido(payload.new as PedidoRow);
             setPedidos((prev) => sortPedidos(prev.map((p) => (p.id === next.id ? next : p))));
             setSelected((current) => (current?.id === next.id ? next : current));
           }
@@ -328,6 +330,24 @@ const AdminDashboard = () => {
     }
     return currentMonthPedidos;
   }, [currentMonthPedidos, customEnd, customStart, pedidos, periodFilter]);
+
+  const upcomingPedidos = useMemo(() => {
+    return [...pedidos]
+      .filter((pedido) => pedido.status !== "finalizado")
+      .sort((a, b) => getPedidoDeadline(a).getTime() - getPedidoDeadline(b).getTime())
+      .slice(0, 6);
+  }, [pedidos]);
+
+  const calendarPedidosByDay = useMemo(() => {
+    const grouped: Record<string, PedidoRow[]> = {};
+    pedidos.forEach((pedido) => {
+      const key = getPedidoDateKey(pedido);
+      grouped[key] = [...(grouped[key] || []), pedido].sort(
+        (a, b) => getPedidoDeadline(a).getTime() - getPedidoDeadline(b).getTime(),
+      );
+    });
+    return grouped;
+  }, [pedidos]);
 
   const kpis = useMemo(() => {
     const pedidosComValor = pedidos.filter((p) => p.valor_total != null);
