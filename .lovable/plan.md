@@ -1,44 +1,113 @@
 
-## Refinamentos no formulário de pedido (`/pedido`)
+# Evolução Sarah Franco — Formulário Premium, Cardápio Guiado e Orçamento Automático
 
-Ajustes pontuais na página `Pedido.tsx`, sem alterar layout geral nem funcionalidades existentes.
+Vou dividir em **4 entregas** para manter o sistema estável e revisável. Cada entrega é independente e não quebra o que já existe.
 
-### 1. Bolo — remover referência a "andares"
-No campo **Tamanho** do `BoloFields`, trocar o placeholder:
-- De: `Ex: 2 andares, 30 fatias...`
-- Para: `Ex: 30 fatias, 2kg, 1,5kg...`
+---
 
-### 2. Começar pelos doces
-- Etapa "Pedido" (`StepItems`) inicia com **1 doce** em vez de 1 bolo.
-- Estado inicial em `Pedido.tsx`: `useState<OrderItem[]>([newDoce()])`.
-- Ordem dos botões "+ adicionar" passa a ser: **Doce primeiro**, depois **Bolo** (já está nessa ordem visual, mas vou reforçar destacando o de doce como ação principal e o de bolo como secundária mais discreta).
+## Entrega 1 — Responsividade do formulário + Header inteligente
 
-### 3. Tipografia e contraste mais fortes no formulário
-A queixa é texto "apagado". Vou aumentar contraste em:
-- **Labels** (`Field`): trocar `text-petrol/70` → `text-petrol` + peso `font-medium`.
-- **Inputs**: texto digitado de `text-petrol` (já ok) mantém, mas placeholder de `placeholder:text-petrol/40` → `placeholder:text-petrol/55` para ficar legível sem virar texto real.
-- **Subtítulos de seção**: `text-petrol/60` → `text-petrol/80`.
-- **Cabeçalho do item** (`Item 1 — Bolo`): aumentar tamanho e peso (`text-xs font-semibold`).
-- **Botão remover**: `text-petrol/50` → `text-petrol/75`.
+**Objetivo:** resolver a dor imediata de scroll/header pesado no mobile sem mexer em lógica.
 
-### 4. Estética mais arredondada
-Aplicar bordas arredondadas consistentes (mantendo elegância, sem virar "bubbly"):
-- **Inputs / textareas** (`inputCls`): adicionar `rounded-xl`.
-- **Card branco principal** (container do step): `rounded-2xl`.
-- **Card de cada item** (Item 1, Item 2…): `rounded-xl`.
-- **Botões de modo** (Entrega / Retirada): `rounded-xl`.
-- **Botões "+ adicionar doce / bolo"**: `rounded-xl`.
-- **Botão Continuar / Enviar pedido**: `rounded-full` (mais premium).
-- **Círculos do stepper**: já são `rounded-full`, mantém.
+- `Navbar.tsx`: reduzir altura no mobile (de `h-[4.5rem]` → `h-14`), logo menor, esconder ao scrollar para baixo / mostrar ao scrollar para cima (comportamento "auto-hide").
+- `Pedido.tsx`: 
+  - `pt-*` ajustado ao novo header, remover gap superior excessivo.
+  - Inputs e cards com `rounded-xl` / `rounded-2xl` consistentes.
+  - Tipografia: subir contraste de labels (`text-petrol/70` → `text-petrol font-medium`), placeholders mais legíveis.
+  - Espaçamento vertical reduzido no mobile, grid 2-col em tablet+ onde fizer sentido.
+  - Stepper compacto no mobile (só números + barra), expandido no desktop.
+- `WhatsAppFloat`: já escondido em `/pedido` (do plano anterior — confirmar).
 
-### 5. Esconder botão flutuante do WhatsApp na página de pedido
-O `WhatsAppFloat` está sobrepondo o botão "Continuar". Solução:
-- No `WhatsAppFloat.tsx`, usar `useLocation()` do `react-router-dom` e **não renderizar** o botão quando `pathname === "/pedido"` (e em qualquer rota `/admin*` por consistência).
-- Retorna `null` nesses casos.
+**Não muda:** schema, validações, fluxo de etapas, identidade visual.
 
-### Arquivos a editar
-- `src/pages/Pedido.tsx` — placeholder do bolo, item inicial doce, classes de tipografia/contraste, `rounded-*` em inputs/cards/botões.
-- `src/components/WhatsAppFloat.tsx` — esconder em `/pedido` e rotas admin.
+---
 
-### O que NÃO muda
-- Layout geral, número de etapas, ordem das etapas, validações, schema do banco, cores principais (burgundy / petrol / cream), animações do botão WhatsApp em outras páginas.
+## Entrega 2 — Cardápio interno (backend) + Admin
+
+**Objetivo:** criar a fonte da verdade dos sabores e preços, **invisível ao cliente**.
+
+### Banco — nova migration
+
+```text
+menu_categorias        (id, tipo, nome, ordem)    -- ex: "doce_tradicional", "bolo_massa"
+menu_itens             (id, categoria_id, nome, ativo, ordem, observacoes_internas)
+precos_doces           (item_id, preco_cento, preco_unitario, atualizado_em)
+precos_bolos_massa     (item_id, preco_kg, atualizado_em)
+precos_bolos_recheio   (item_id, acrescimo_kg)    -- recheio premium adiciona valor
+precos_adicionais      (item_id, acrescimo_kg)
+```
+
+- RLS: **SELECT público** apenas em `menu_categorias` + `menu_itens` (sabores são públicos).
+- RLS: **todas as tabelas `precos_*`** acessíveis somente por `admin` (has_role).
+- Seed inicial com toda a lista do briefing (massas, coberturas, recheios, adicionais, doces tradicionais/gourmet/finos) + dados do PDF anexado.
+
+### Admin — nova aba "Cardápio Interno"
+
+- CRUD de itens por categoria.
+- Edição inline de preços (`R$/kg` para bolos, `R$/cento` e `R$/un` para doces).
+- Toggle ativo/inativo (some do formulário do cliente sem deletar).
+
+---
+
+## Entrega 3 — Formulário guiado por cardápio
+
+**Objetivo:** trocar campos livres por seletores estruturados.
+
+### Bolos — "Monte seu bolo"
+- Seletor de **massa** (radio cards com nome).
+- Seletor de **cobertura** (radio cards).
+- Multi-select de **recheios** (até N camadas).
+- Multi-select de **adicionais** (morango, nutella, etc.).
+- Campos: peso estimado (kg), quantidade, observações.
+- **Sem preço visível.**
+
+### Doces — categorias colapsáveis
+- Accordion: Tradicionais / Gourmet / Finos.
+- Cada sabor: checkbox + qtd + cor da forminha + obs.
+- Resumo lateral (no desktop) / inferior (no mobile) mostrando "X sabores, Y unidades totais" — **sem valores**.
+
+### Estrutura de dados do pedido
+`itens` (jsonb) passa a guardar `item_id` (referência ao cardápio) além do nome — permite recálculo se preço mudar. Mantém compatibilidade com pedidos antigos (campos `sabores`, `massa` etc. continuam aceitos).
+
+---
+
+## Entrega 4 — Orçamento automático + PDF dual
+
+### Cálculo automático (Admin)
+- Edge function `calcular-orcamento`: recebe `pedido_id`, cruza itens com tabelas de preço, retorna composição detalhada (linha a linha + total).
+- No dashboard, ao abrir pedido: mostra "Orçamento sugerido: R$ X" com breakdown.
+- Sarah pode **ajustar manualmente** (`valor_total` editável) e adicionar nota interna.
+
+### PDF de orçamento — duas versões
+- **PDF cliente** (`generatePedidoPdf` — já existe, refinar): só itens, descrição e **valor final** consolidado.
+- **PDF admin** (novo): breakdown completo — preço/kg, preço/cento, margem estimada, composição.
+- Botões separados no admin: "Baixar para cliente" / "Baixar interno".
+
+---
+
+## Stack técnica
+
+- Banco: Supabase (migrations + RLS).
+- Frontend: componentes novos em `src/components/pedido/menu/` (BoloBuilder, DocesPicker) e `src/components/admin/cardapio/`.
+- PDF: continuar com `pdf-lib` / o gerador atual.
+- Sem novas dependências grandes.
+
+---
+
+## O que NÃO muda
+
+- Identidade visual (bordô / petróleo / cream, Cormorant + Inter).
+- Estrutura de etapas do formulário (cliente → evento → itens → logística → revisão).
+- Endpoints existentes (`send-pedido-email`, `sync-pedido-sheets`).
+- Schema dos pedidos antigos (retrocompatível).
+
+---
+
+## Ordem sugerida de execução
+
+1. **Entrega 1** primeiro (rápida, alto impacto visível).
+2. Depois confirmamos antes de seguir para a 2 (migration + admin).
+3. Entrega 3 depende da 2.
+4. Entrega 4 fecha o ciclo.
+
+**Posso começar pela Entrega 1 agora?** Ou prefere que eu já dispare a migration da Entrega 2 em paralelo?

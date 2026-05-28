@@ -185,46 +185,46 @@ const Pedido = () => {
         description="Monte seu pedido de bolos e doces artesanais personalizados. Receba um orçamento sob medida para o seu evento."
         path="/pedido"
       />
-      {/* Top bar */}
-      <header className="border-b border-burgundy/15 bg-cream">
-        <div className="container-narrow flex h-20 items-center justify-between">
+      {/* Top bar — compacta e sticky */}
+      <header className="sticky top-0 z-40 border-b border-burgundy/15 bg-cream/90 backdrop-blur-md">
+        <div className="container-narrow flex h-14 items-center justify-between md:h-16">
           <Link to="/" className="flex items-center gap-3">
             <img
               src={logo}
               alt="Sarah Franco"
-              className="h-9 w-auto"
+              className="h-7 w-auto md:h-8"
               style={{ filter: "brightness(0.4) sepia(1) hue-rotate(-20deg) saturate(6)" }}
             />
           </Link>
           <Link
             to="/"
-            className="text-xs uppercase tracking-[0.25em] text-petrol/70 hover:text-burgundy"
+            className="text-[0.65rem] uppercase tracking-[0.22em] text-petrol/70 hover:text-burgundy md:text-xs md:tracking-[0.25em]"
           >
             ← voltar
           </Link>
         </div>
       </header>
 
-      <div className="container-narrow py-12 md:py-20">
+      <div className="container-narrow py-6 md:py-12">
         <div className="mx-auto max-w-3xl">
           {/* Title */}
           <div className="text-center">
             <span className="eyebrow">Solicitar orçamento</span>
-            <h1 className="mt-6 font-serif text-4xl leading-tight text-petrol md:text-5xl">
+            <h1 className="mt-4 font-serif text-3xl leading-tight text-petrol md:mt-6 md:text-5xl">
               Vamos montar seu <span className="font-script text-burgundy">pedido</span>
             </h1>
-            <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-petrol/70 md:text-base">
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-petrol/75 md:mt-5 md:text-base">
               Descreva seu pedido do jeitinho que você imagina — quanto mais
               detalhes, mais personalizado fica o seu orçamento.
             </p>
           </div>
 
           {/* Stepper */}
-          <ol className="mt-12 grid grid-cols-5 gap-2 md:gap-4">
+          <ol className="mt-6 grid grid-cols-5 gap-1.5 md:mt-12 md:gap-4">
             {stepLabels.map((label, i) => (
-              <li key={label} className="flex flex-col items-center gap-2">
+              <li key={label} className="flex flex-col items-center gap-1.5 md:gap-2">
                 <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs transition-all ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-[0.7rem] transition-all md:h-9 md:w-9 md:text-xs ${
                     i <= step
                       ? "border-burgundy bg-burgundy text-cream"
                       : "border-burgundy/30 bg-transparent text-petrol/50"
@@ -233,18 +233,25 @@ const Pedido = () => {
                   {i + 1}
                 </div>
                 <span
-                  className={`text-[0.6rem] uppercase tracking-[0.2em] md:text-[0.65rem] ${
+                  className={`hidden text-[0.6rem] uppercase tracking-[0.2em] sm:block md:text-[0.65rem] ${
                     i <= step ? "text-burgundy" : "text-petrol/50"
                   }`}
                 >
                   {label}
+                </span>
+                <span
+                  className={`text-[0.55rem] uppercase tracking-[0.15em] sm:hidden ${
+                    i === step ? "text-burgundy" : "text-transparent"
+                  }`}
+                >
+                  {i === step ? label : "."}
                 </span>
               </li>
             ))}
           </ol>
 
           {/* Card */}
-          <div className="mt-12 rounded-2xl border border-burgundy/15 bg-cream p-6 shadow-soft md:p-12">
+          <div className="mt-6 rounded-2xl border border-burgundy/15 bg-cream p-5 shadow-soft md:mt-12 md:p-12">
             {step === 0 && (
               <StepCustomer cliente={cliente} setCliente={setCliente} />
             )}
@@ -270,12 +277,12 @@ const Pedido = () => {
             )}
 
             {/* Nav buttons */}
-            <div className="mt-10 flex items-center justify-between border-t border-burgundy/15 pt-8">
+            <div className="mt-8 flex items-center justify-between gap-3 border-t border-burgundy/15 pt-6 md:mt-10 md:pt-8">
               <button
                 type="button"
                 onClick={prev}
                 disabled={step === 0}
-                className="text-xs uppercase tracking-[0.25em] text-petrol/80 transition-colors hover:text-burgundy disabled:opacity-30"
+                className="text-[0.65rem] uppercase tracking-[0.22em] text-petrol/80 transition-colors hover:text-burgundy disabled:opacity-30 md:text-xs md:tracking-[0.25em]"
               >
                 ← Voltar
               </button>
@@ -283,7 +290,7 @@ const Pedido = () => {
                 <button
                   type="button"
                   onClick={next}
-                  className="group inline-flex items-center gap-3 rounded-full bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant"
+                  className="group inline-flex items-center gap-2 rounded-full bg-burgundy px-6 py-3 text-[0.65rem] uppercase tracking-[0.22em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant md:gap-3 md:px-8 md:py-3.5 md:text-xs md:tracking-[0.25em]"
                 >
                   Continuar
                   <span className="transition-transform duration-500 group-hover:translate-x-1">
@@ -295,7 +302,7 @@ const Pedido = () => {
                   type="button"
                   onClick={submit}
                   disabled={enviando}
-                  className="group inline-flex items-center gap-3 rounded-full bg-burgundy px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant disabled:opacity-50"
+                  className="group inline-flex items-center gap-2 rounded-full bg-burgundy px-6 py-3 text-[0.65rem] uppercase tracking-[0.22em] text-cream shadow-soft transition-all duration-500 hover:bg-burgundy-deep hover:shadow-elegant disabled:opacity-50 md:gap-3 md:px-8 md:py-3.5 md:text-xs md:tracking-[0.25em]"
                 >
                   {enviando ? "Enviando..." : "Enviar pedido"}
                   <span className="transition-transform duration-500 group-hover:translate-x-1">
@@ -525,7 +532,7 @@ const StepItems = ({
       {itens.map((item, idx) => (
         <div
           key={item.id}
-          className="rounded-xl border border-burgundy/20 bg-background p-6 shadow-sm"
+          className="rounded-xl border border-burgundy/20 bg-background p-4 shadow-sm md:p-6"
         >
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-burgundy">
@@ -749,8 +756,8 @@ const SectionTitle = ({
   subtitle: string;
 }) => (
   <div>
-    <h2 className="font-serif text-3xl text-petrol">{title}</h2>
-    <p className="mt-2 text-sm text-petrol/80">{subtitle}</p>
+    <h2 className="font-serif text-2xl text-petrol md:text-3xl">{title}</h2>
+    <p className="mt-1.5 text-sm text-petrol/80 md:mt-2">{subtitle}</p>
   </div>
 );
 
