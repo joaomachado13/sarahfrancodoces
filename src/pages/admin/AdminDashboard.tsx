@@ -861,6 +861,130 @@ const InsightList = ({ title, items }: { title: string; items: string[] }) => (
   </div>
 );
 
+const CalendarTab = ({
+  pedidos,
+  upcomingPedidos,
+  calendarPedidosByDay,
+  calendarMonth,
+  setCalendarMonth,
+  onSelectPedido,
+}: {
+  pedidos: PedidoRow[];
+  upcomingPedidos: PedidoRow[];
+  calendarPedidosByDay: Record<string, PedidoRow[]>;
+  calendarMonth: Date;
+  setCalendarMonth: React.Dispatch<React.SetStateAction<Date>>;
+  onSelectPedido: (pedido: PedidoRow) => void;
+}) => {
+  const year = calendarMonth.getFullYear();
+  const month = calendarMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startOffset = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [
+    ...Array.from({ length: startOffset }, (_, i) => ({ key: `empty-${i}`, day: null as number | null })),
+    ...Array.from({ length: daysInMonth }, (_, i) => ({ key: `day-${i + 1}`, day: i + 1 })),
+  ];
+  const monthLabel = calendarMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  const moveMonth = (amount: number) => {
+    setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1));
+  };
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
+      <section className="rounded-2xl border border-burgundy/12 bg-cream p-5 shadow-soft">
+        <div className="flex items-center gap-2">
+          <AlertTriangle size={16} className="text-burgundy" />
+          <p className="text-[0.65rem] uppercase tracking-[0.25em] text-burgundy/70">Prioridade</p>
+        </div>
+        <h2 className="mt-2 font-serif text-2xl text-petrol">Próximas entregas</h2>
+        <div className="mt-5 space-y-3">
+          {upcomingPedidos.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-burgundy/18 bg-background p-5 text-sm text-petrol/45">
+              Nenhum pedido pendente no momento.
+            </p>
+          ) : (
+            upcomingPedidos.map((pedido) => (
+              <button
+                key={pedido.id}
+                onClick={() => onSelectPedido(pedido)}
+                className={`w-full rounded-xl border p-4 text-left transition-all hover:border-burgundy/50 ${urgencyClass(pedido)}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-petrol">{pedido.nome_cliente}</p>
+                    <p className="mt-1 text-xs text-petrol/55">{formatDeadline(pedido)}</p>
+                  </div>
+                  <span className="rounded-full border border-burgundy/15 bg-cream px-2 py-0.5 text-[0.58rem] uppercase tracking-[0.16em] text-burgundy">
+                    {statusLabels[pedido.status]}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm font-semibold text-burgundy">{formatRemaining(pedido)}</p>
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-petrol/60">{resumoPedido(pedido)}</p>
+              </button>
+            ))
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-burgundy/12 bg-cream p-5 shadow-soft">
+        <div className="flex flex-col gap-3 border-b border-burgundy/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[0.65rem] uppercase tracking-[0.25em] text-burgundy/70">Agenda</p>
+            <h2 className="mt-1 font-serif text-2xl capitalize text-petrol">{monthLabel}</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => moveMonth(-1)} className="rounded-xl border border-burgundy/20 p-2 text-petrol/70 hover:border-burgundy hover:text-burgundy" aria-label="Mês anterior">
+              <ChevronLeft size={16} />
+            </button>
+            <button onClick={() => setCalendarMonth(new Date())} className="rounded-xl border border-burgundy/20 px-3 py-2 text-[0.62rem] uppercase tracking-[0.18em] text-petrol/70 hover:border-burgundy hover:text-burgundy">
+              Hoje
+            </button>
+            <button onClick={() => moveMonth(1)} className="rounded-xl border border-burgundy/20 p-2 text-petrol/70 hover:border-burgundy hover:text-burgundy" aria-label="Próximo mês">
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-7 gap-2 text-center text-[0.6rem] uppercase tracking-[0.18em] text-petrol/45">
+          {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => <span key={day}>{day}</span>)}
+        </div>
+        <div className="mt-2 grid grid-cols-7 gap-2">
+          {cells.map(({ key, day }) => {
+            const dateKey = day ? `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}` : "";
+            const dayPedidos = dateKey ? calendarPedidosByDay[dateKey] || [] : [];
+            return (
+              <div key={key} className="min-h-28 rounded-xl border border-burgundy/10 bg-background p-2">
+                {day && (
+                  <>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-semibold text-petrol">{day}</span>
+                      {dayPedidos.length > 0 && <span className="rounded-full bg-burgundy px-1.5 py-0.5 text-[0.55rem] text-cream">{dayPedidos.length}</span>}
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      {dayPedidos.slice(0, 3).map((pedido) => (
+                        <button
+                          key={pedido.id}
+                          onClick={() => onSelectPedido(pedido)}
+                          className="block w-full truncate rounded-md bg-burgundy/8 px-2 py-1 text-left text-[0.6rem] text-petrol hover:bg-burgundy/15"
+                        >
+                          {pedido.nome_cliente}
+                        </button>
+                      ))}
+                      {dayPedidos.length > 3 && <p className="text-[0.55rem] text-petrol/45">+{dayPedidos.length - 3} pedido(s)</p>}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+};
+
 /* ════════════════════════════════════════════════ */
 /* Drawer lateral de pedido — preservado intacto  */
 /* ════════════════════════════════════════════════ */
