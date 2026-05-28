@@ -823,21 +823,6 @@ const PedidoDetail = ({
                       {it.observacoes && <p className="text-petrol/60">Obs: {it.observacoes}</p>}
                     </div>
                   )}
-                  <div className="mt-3 flex items-center gap-3">
-                    <span className="text-[0.6rem] uppercase tracking-[0.2em] text-petrol/50">Valor</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-petrol/60">R$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={valoresItens[it.id] || ""}
-                        onChange={(e) => setValoresItens((prev) => ({ ...prev, [it.id]: e.target.value }))}
-                        placeholder="0,00"
-                        className="w-28 rounded-lg border border-burgundy/20 bg-background px-2 py-1.5 text-sm text-petrol focus:border-burgundy focus:outline-none"
-                      />
-                    </div>
-                  </div>
                 </li>
               ))}
             </ul>
