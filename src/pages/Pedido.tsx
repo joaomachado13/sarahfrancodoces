@@ -33,21 +33,82 @@ const pedidoSchema = z.object({
 
 const stepLabels = ["Você", "Evento", "Entrega", "Pedido", "Revisão"];
 
-/* ===== Cardápio (opções estruturadas para o cliente) ===== */
-const SABORES_DOCES = [
-  "Brigadeiro tradicional",
+/* ===== Cardápio oficial Sarah Franco ===== */
+const MASSAS_BOLO = ["Chocolate", "Baunilha"];
+
+const COBERTURAS_BOLO = [
+  "Chantilly",
+  "Chantininho",
+  "Ganache ao leite",
+  "Ganache meio amargo",
+];
+
+const RECHEIOS_BOLO = [
+  "Brigadeiro",
+  "Mulatinho",
+  "Trufado de Maracujá",
+  "Abacaxi com Coco",
+  "Choconinho",
+  "Leite Ninho",
+  "Prestígio",
+  "Doce de Leite com Ameixa",
+  "Olho de Sogra",
+  "Floresta Negra",
+  "Camafeu de Nozes",
+  "Pistache com Frutas Vermelhas",
+];
+
+const ADICIONAIS_BOLO = [
+  "Morango",
+  "Nutella",
+  "Crocante (Praliné de Castanha de Caju)",
+  "Uva Verde",
+];
+
+const DOCES_TRADICIONAIS = [
+  "Brigadeiro",
   "Beijinho",
   "Cajuzinho",
-  "Casadinho",
-  "Brigadeiro de pistache",
-  "Ninho com Nutella",
-  "Ferrero",
-  "Maracujá",
-  "Limão siciliano",
-  "Doce de leite",
-  "Morango com Nutella",
-  "Churros",
+  "Brigadeiro de Ninho",
 ];
+
+const DOCES_GOURMET = [
+  "Brigadeiro Gourmet",
+  "Leite Ninho",
+  "Brigadeiro de Ninho com Nutella",
+  "Brigadeiro Crocante",
+  "Paçoca",
+  "Churros",
+  "Mulatinho",
+  "Casadinho",
+  "Olho de Sogra",
+  "Brigadeiro de Morango",
+  "Oreo",
+  "Leite Ninho com Nutella",
+  "Ferrero",
+  "Caramelo Salgado",
+  "Pistache",
+  "Crème Brûlée",
+  "Olho de Sogro",
+  "Nozes",
+];
+
+const DOCES_FINOS = [
+  "Mousse de Maracujá",
+  "Mousse de Limão",
+  "Mousse de Ninho",
+  "Brigadeiro Branco com Morango/Uva",
+  "Ganache ao Leite ou Meio Amargo",
+  "Brigadeiro Branco/ao Leite com Cereja ou Physalis",
+  "Brigadeiro de Pistache com Geleia de Frutas Vermelhas",
+];
+
+const DOCES_CATEGORIAS: { titulo: string; itens: string[] }[] = [
+  { titulo: "Tradicionais", itens: DOCES_TRADICIONAIS },
+  { titulo: "Gourmet", itens: DOCES_GOURMET },
+  { titulo: "Finos", itens: DOCES_FINOS },
+];
+
 const CORES_FORMINHA = [
   "Dourada",
   "Rosé",
@@ -58,40 +119,12 @@ const CORES_FORMINHA = [
   "Prata",
   "Marfim",
 ];
+
 const TAMANHOS_BOLO = [
   "P — até 20 fatias (~1,5kg)",
   "M — até 40 fatias (~2,5kg)",
   "G — até 60 fatias (~4kg)",
   "GG — 80+ fatias (5kg+)",
-];
-const MASSAS_BOLO = [
-  "Baunilha",
-  "Chocolate",
-  "Red Velvet",
-  "Cenoura",
-  "Limão",
-  "Coco",
-  "Amêndoas",
-];
-const RECHEIOS_BOLO = [
-  "Brigadeiro",
-  "Brigadeiro com morango",
-  "Doce de leite",
-  "Ninho com Nutella",
-  "Ninho com morango",
-  "Limão",
-  "Coco",
-  "Maracujá",
-  "Pistache",
-  "Ganache de chocolate",
-];
-const COBERTURAS_BOLO = [
-  "Chantilly",
-  "Buttercream",
-  "Fondant bordô",
-  "Fondant marfim",
-  "Ganache",
-  "Naked (sem cobertura)",
 ];
 
 const Pedido = () => {
