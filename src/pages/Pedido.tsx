@@ -180,6 +180,11 @@ const Pedido = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Solicitar Orçamento — Sarah Franco Doces & Bolos"
+        description="Monte seu pedido de bolos e doces artesanais personalizados. Receba um orçamento sob medida para o seu evento."
+        path="/pedido"
+      />
       {/* Top bar */}
       <header className="border-b border-burgundy/15 bg-cream">
         <div className="container-narrow flex h-20 items-center justify-between">

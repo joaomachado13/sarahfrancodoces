@@ -59,6 +59,11 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Login do Administrador — Sarah Franco Doces & Bolos"
+        description="Acesso restrito à área administrativa de pedidos da Sarah Franco Doces & Bolos."
+        path="/admin/login"
+      />
       <header className="border-b border-burgundy/15 bg-cream">
         <div className="container-narrow flex h-20 items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
