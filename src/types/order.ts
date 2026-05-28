@@ -21,7 +21,7 @@ export interface DoceItem {
   id: string;
   tipo: "doce";
   quantidade: number;
-  sabores: string[];
+  sabor: string;
   corForminha: string;
   observacoes: string;
 }
@@ -31,9 +31,9 @@ export interface BoloItem {
   tipo: "bolo";
   tamanho: string;
   massa: string;
-  recheios: string[];
+  recheio: string;
   cobertura: string;
-  adicionais: string[];
+  adicional: string;
   observacoes: string;
 }
 
@@ -52,7 +52,7 @@ export const newDoce = (): DoceItem => ({
   id: crypto.randomUUID(),
   tipo: "doce",
   quantidade: 50,
-  sabores: [],
+  sabor: "",
   corForminha: "",
   observacoes: "",
 });
@@ -62,9 +62,9 @@ export const newBolo = (): BoloItem => ({
   tipo: "bolo",
   tamanho: "",
   massa: "",
-  recheios: [],
+  recheio: "",
   cobertura: "",
-  adicionais: [],
+  adicional: "",
   observacoes: "",
 });
 
