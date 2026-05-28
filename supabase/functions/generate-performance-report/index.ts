@@ -54,6 +54,8 @@ type MonthMetric = {
 
 type StatusKey = "novo" | "em_orcamento" | "finalizado";
 
+const ADMIN_START_DATE = "2026-05-01";
+
 const statusLabels: Record<StatusKey, string> = {
   novo: "Novo",
   em_orcamento: "Em orçamento",
@@ -249,6 +251,7 @@ serve(async (req) => {
     const { data, error } = await serviceClient
       .from("pedidos")
       .select("id, status, valor_total, itens, created_at, data_evento")
+      .gte("created_at", ADMIN_START_DATE)
       .order("created_at", { ascending: true });
 
     if (error) {
