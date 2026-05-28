@@ -33,6 +33,67 @@ const pedidoSchema = z.object({
 
 const stepLabels = ["Você", "Evento", "Entrega", "Pedido", "Revisão"];
 
+/* ===== Cardápio (opções estruturadas para o cliente) ===== */
+const SABORES_DOCES = [
+  "Brigadeiro tradicional",
+  "Beijinho",
+  "Cajuzinho",
+  "Casadinho",
+  "Brigadeiro de pistache",
+  "Ninho com Nutella",
+  "Ferrero",
+  "Maracujá",
+  "Limão siciliano",
+  "Doce de leite",
+  "Morango com Nutella",
+  "Churros",
+];
+const CORES_FORMINHA = [
+  "Dourada",
+  "Rosé",
+  "Branca",
+  "Preta",
+  "Vermelha",
+  "Bordô",
+  "Prata",
+  "Marfim",
+];
+const TAMANHOS_BOLO = [
+  "P — até 20 fatias (~1,5kg)",
+  "M — até 40 fatias (~2,5kg)",
+  "G — até 60 fatias (~4kg)",
+  "GG — 80+ fatias (5kg+)",
+];
+const MASSAS_BOLO = [
+  "Baunilha",
+  "Chocolate",
+  "Red Velvet",
+  "Cenoura",
+  "Limão",
+  "Coco",
+  "Amêndoas",
+];
+const RECHEIOS_BOLO = [
+  "Brigadeiro",
+  "Brigadeiro com morango",
+  "Doce de leite",
+  "Ninho com Nutella",
+  "Ninho com morango",
+  "Limão",
+  "Coco",
+  "Maracujá",
+  "Pistache",
+  "Ganache de chocolate",
+];
+const COBERTURAS_BOLO = [
+  "Chantilly",
+  "Buttercream",
+  "Fondant bordô",
+  "Fondant marfim",
+  "Ganache",
+  "Naked (sem cobertura)",
+];
+
 const Pedido = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -92,6 +153,31 @@ const Pedido = () => {
       if (itens.length === 0) {
         toast.error("Adicione ao menos um item.");
         return;
+      }
+      for (const [i, it] of itens.entries()) {
+        const tag = `Item ${i + 1}`;
+        if (it.tipo === "doce") {
+          if (!it.quantidade || it.quantidade < 1) {
+            toast.error(`${tag}: informe a quantidade.`);
+            return;
+          }
+          if (!it.sabores || it.sabores.length === 0) {
+            toast.error(`${tag}: escolha ao menos um sabor.`);
+            return;
+          }
+          if (!it.corForminha) {
+            toast.error(`${tag}: escolha a cor da forminha.`);
+            return;
+          }
+        } else {
+          if (!it.tamanho) { toast.error(`${tag}: escolha o tamanho do bolo.`); return; }
+          if (!it.massa) { toast.error(`${tag}: escolha a massa.`); return; }
+          if (!it.recheios || it.recheios.length === 0) {
+            toast.error(`${tag}: escolha ao menos um recheio.`);
+            return;
+          }
+          if (!it.cobertura) { toast.error(`${tag}: escolha a cobertura.`); return; }
+        }
       }
     }
     setStep((s) => Math.min(s + 1, stepLabels.length - 1));
@@ -585,49 +671,49 @@ const DoceFields = ({
 }: {
   item: DoceItem;
   updateItem: (id: string, patch: Partial<OrderItem>) => void;
-}) => (
-  <div className="space-y-5">
-    <div className="grid gap-5 md:grid-cols-2">
-      <Field label="Quantidade">
-        <input
-          type="number"
-          min={1}
-          className={inputCls}
-          value={item.quantidade}
-          onChange={(e) =>
-            updateItem(item.id, { quantidade: Number(e.target.value) })
-          }
-        />
+}) => {
+  const toggleSabor = (s: string) => {
+    const has = item.sabores.includes(s);
+    updateItem(item.id, {
+      sabores: has ? item.sabores.filter((x) => x !== s) : [...item.sabores, s],
+    });
+  };
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-5 md:grid-cols-2">
+        <Field label="Quantidade *">
+          <input
+            type="number"
+            min={1}
+            className={inputCls}
+            value={item.quantidade}
+            onChange={(e) => updateItem(item.id, { quantidade: Number(e.target.value) })}
+          />
+        </Field>
+        <Field label="Cor da forminha *">
+          <ChipGroup
+            options={CORES_FORMINHA}
+            selected={item.corForminha ? [item.corForminha] : []}
+            onToggle={(v) => updateItem(item.id, { corForminha: v })}
+            single
+          />
+        </Field>
+      </div>
+      <Field label={`Sabores * ${item.sabores.length > 0 ? `(${item.sabores.length} selecionados)` : ""}`}>
+        <ChipGroup options={SABORES_DOCES} selected={item.sabores} onToggle={toggleSabor} />
       </Field>
-      <Field label="Cor da forminha">
-        <input
-          className={inputCls}
-          value={item.corForminha}
-          onChange={(e) => updateItem(item.id, { corForminha: e.target.value })}
-          placeholder="Ex: dourada, rosé, branca..."
+      <Field label="Observações (opcional)">
+        <textarea
+          rows={2}
+          className={inputCls + " resize-none"}
+          value={item.observacoes}
+          onChange={(e) => updateItem(item.id, { observacoes: e.target.value })}
+          placeholder="Restrições, preferências, etc."
         />
       </Field>
     </div>
-    <Field label="Sabores (texto livre)">
-      <textarea
-        rows={3}
-        className={inputCls + " resize-none"}
-        value={item.sabores}
-        onChange={(e) => updateItem(item.id, { sabores: e.target.value })}
-        placeholder="Ex: brigadeiro tradicional, pistache, beijinho de coco..."
-      />
-    </Field>
-    <Field label="Observações">
-      <textarea
-        rows={2}
-        className={inputCls + " resize-none"}
-        value={item.observacoes}
-        onChange={(e) => updateItem(item.id, { observacoes: e.target.value })}
-        placeholder="Restrições, preferências, etc."
-      />
-    </Field>
-  </div>
-);
+  );
+};
 
 const BoloFields = ({
   item,
@@ -635,53 +721,86 @@ const BoloFields = ({
 }: {
   item: BoloItem;
   updateItem: (id: string, patch: Partial<OrderItem>) => void;
+}) => {
+  const toggleRecheio = (s: string) => {
+    const has = item.recheios.includes(s);
+    updateItem(item.id, {
+      recheios: has ? item.recheios.filter((x) => x !== s) : [...item.recheios, s],
+    });
+  };
+  return (
+    <div className="space-y-5">
+      <Field label="Tamanho *">
+        <ChipGroup
+          options={TAMANHOS_BOLO}
+          selected={item.tamanho ? [item.tamanho] : []}
+          onToggle={(v) => updateItem(item.id, { tamanho: v })}
+          single
+        />
+      </Field>
+      <Field label="Massa *">
+        <ChipGroup
+          options={MASSAS_BOLO}
+          selected={item.massa ? [item.massa] : []}
+          onToggle={(v) => updateItem(item.id, { massa: v })}
+          single
+        />
+      </Field>
+      <Field label={`Recheios * ${item.recheios.length > 0 ? `(${item.recheios.length} selecionados)` : ""}`}>
+        <ChipGroup options={RECHEIOS_BOLO} selected={item.recheios} onToggle={toggleRecheio} />
+      </Field>
+      <Field label="Cobertura *">
+        <ChipGroup
+          options={COBERTURAS_BOLO}
+          selected={item.cobertura ? [item.cobertura] : []}
+          onToggle={(v) => updateItem(item.id, { cobertura: v })}
+          single
+        />
+      </Field>
+      <Field label="Observações (opcional)">
+        <textarea
+          rows={3}
+          className={inputCls + " resize-none"}
+          value={item.observacoes}
+          onChange={(e) => updateItem(item.id, { observacoes: e.target.value })}
+          placeholder="Decoração, topo de bolo, paleta de cores..."
+        />
+      </Field>
+    </div>
+  );
+};
+
+/* ===== Chip selector (single ou multi) ===== */
+const ChipGroup = ({
+  options,
+  selected,
+  onToggle,
+  single = false,
+}: {
+  options: string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+  single?: boolean;
 }) => (
-  <div className="space-y-5">
-    <div className="grid gap-5 md:grid-cols-2">
-      <Field label="Tamanho">
-        <input
-          className={inputCls}
-          value={item.tamanho}
-          onChange={(e) => updateItem(item.id, { tamanho: e.target.value })}
-          placeholder="Ex: 30 fatias, 2kg, 1,5kg..."
-        />
-      </Field>
-      <Field label="Massa">
-        <input
-          className={inputCls}
-          value={item.massa}
-          onChange={(e) => updateItem(item.id, { massa: e.target.value })}
-          placeholder="Ex: baunilha, chocolate, red velvet..."
-        />
-      </Field>
-    </div>
-    <div className="grid gap-5 md:grid-cols-2">
-      <Field label="Recheio">
-        <input
-          className={inputCls}
-          value={item.recheio}
-          onChange={(e) => updateItem(item.id, { recheio: e.target.value })}
-          placeholder="Ex: brigadeiro com morango..."
-        />
-      </Field>
-      <Field label="Cobertura">
-        <input
-          className={inputCls}
-          value={item.cobertura}
-          onChange={(e) => updateItem(item.id, { cobertura: e.target.value })}
-          placeholder="Ex: chantilly, fondant bordô..."
-        />
-      </Field>
-    </div>
-    <Field label="Observações">
-      <textarea
-        rows={3}
-        className={inputCls + " resize-none"}
-        value={item.observacoes}
-        onChange={(e) => updateItem(item.id, { observacoes: e.target.value })}
-        placeholder="Decoração, topo de bolo, paleta de cores..."
-      />
-    </Field>
+  <div className="flex flex-wrap gap-2">
+    {options.map((opt) => {
+      const isOn = selected.includes(opt);
+      return (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => onToggle(opt)}
+          aria-pressed={isOn}
+          className={`rounded-full border px-3.5 py-2 text-xs font-medium transition-all md:text-sm ${
+            isOn
+              ? "border-burgundy bg-burgundy text-cream shadow-soft"
+              : "border-burgundy/30 bg-background text-petrol hover:border-burgundy hover:bg-burgundy/5"
+          }`}
+        >
+          {single && isOn ? "✓ " : ""}{opt}
+        </button>
+      );
+    })}
   </div>
 );
 
@@ -734,11 +853,11 @@ const StepReview = ({
             </p>
             {it.tipo === "doce" ? (
               <p className="mt-1 text-sm text-petrol/80">
-                {it.quantidade} unid. · {it.sabores || "(sabores a definir)"}
+                {it.quantidade} unid. · forminha {it.corForminha || "—"} · {it.sabores.join(", ") || "(sabores a definir)"}
               </p>
             ) : (
               <p className="mt-1 text-sm text-petrol/80">
-                {it.tamanho} · {it.massa} / {it.recheio} / {it.cobertura}
+                {it.tamanho} · {it.massa} / {it.recheios.join(", ") || "—"} / {it.cobertura}
               </p>
             )}
           </li>

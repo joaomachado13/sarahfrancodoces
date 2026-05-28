@@ -225,7 +225,7 @@ export const generatePedidoPdf = (pedido: PedidoPdf) => {
       const body = [
         `Tamanho: ${it.tamanho || "—"}`,
         `Massa: ${it.massa || "—"}`,
-        `Recheio: ${it.recheio || "—"}`,
+        `Recheio: ${(Array.isArray((it as any).recheios) ? (it as any).recheios.join(", ") : ((it as any).recheio || "")) || "—"}`,
         `Cobertura: ${it.cobertura || "—"}`,
       ];
       if (it.observacoes) body.push(`Observações: ${it.observacoes}`);

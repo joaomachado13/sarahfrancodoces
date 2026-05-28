@@ -99,11 +99,17 @@ const fmtDate = (date: string) => new Date(`${date}T00:00`).toLocaleDateString("
 
 const itemSummary = (item: OrderItem) => {
   if (item.tipo === "bolo") {
-    return ["Bolo", item.tamanho, item.massa && `massa ${item.massa}`, item.recheio && `recheio ${item.recheio}`]
+    const recheio = Array.isArray((item as any).recheios)
+      ? (item as any).recheios.join(", ")
+      : (item as any).recheio || "";
+    return ["Bolo", item.tamanho, item.massa && `massa ${item.massa}`, recheio && `recheio ${recheio}`]
       .filter(Boolean)
       .join(" · ");
   }
-  return [`${item.quantidade || 0} doces`, item.sabores].filter(Boolean).join(" · ");
+  const sabores = Array.isArray((item as any).sabores)
+    ? (item as any).sabores.join(", ")
+    : (item as any).sabores || "";
+  return [`${item.quantidade || 0} doces`, sabores].filter(Boolean).join(" · ");
 };
 
 const resumoPedido = (pedido: PedidoRow) => {
@@ -818,13 +824,13 @@ const PedidoDetail = ({
                   {it.tipo === "doce" ? (
                     <div className="mt-1 space-y-1 text-sm text-petrol/80">
                       <p>{it.quantidade} unidades · forminha: {it.corForminha || "—"}</p>
-                      <p>Sabores: {it.sabores || "—"}</p>
+                      <p>Sabores: {(Array.isArray((it as any).sabores) ? (it as any).sabores.join(", ") : (it as any).sabores) || "—"}</p>
                       {it.observacoes && <p className="text-petrol/60">Obs: {it.observacoes}</p>}
                     </div>
                   ) : (
                     <div className="mt-1 space-y-1 text-sm text-petrol/80">
                       <p>Tamanho: {it.tamanho || "—"}</p>
-                      <p>Massa: {it.massa || "—"} · Recheio: {it.recheio || "—"} · Cobertura: {it.cobertura || "—"}</p>
+                      <p>Massa: {it.massa || "—"} · Recheio: {(Array.isArray((it as any).recheios) ? (it as any).recheios.join(", ") : (it as any).recheio) || "—"} · Cobertura: {it.cobertura || "—"}</p>
                       {it.observacoes && <p className="text-petrol/60">Obs: {it.observacoes}</p>}
                     </div>
                   )}

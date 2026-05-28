@@ -21,7 +21,7 @@ export interface DoceItem {
   id: string;
   tipo: "doce";
   quantidade: number;
-  sabores: string;
+  sabores: string[];
   corForminha: string;
   observacoes: string;
 }
@@ -31,7 +31,7 @@ export interface BoloItem {
   tipo: "bolo";
   tamanho: string;
   massa: string;
-  recheio: string;
+  recheios: string[];
   cobertura: string;
   observacoes: string;
 }
@@ -51,7 +51,7 @@ export const newDoce = (): DoceItem => ({
   id: crypto.randomUUID(),
   tipo: "doce",
   quantidade: 50,
-  sabores: "",
+  sabores: [],
   corForminha: "",
   observacoes: "",
 });
@@ -61,7 +61,14 @@ export const newBolo = (): BoloItem => ({
   tipo: "bolo",
   tamanho: "",
   massa: "",
-  recheio: "",
+  recheios: [],
   cobertura: "",
   observacoes: "",
 });
+
+/** Normaliza campo que pode vir como string (pedidos antigos) ou string[] (novos). */
+export const asList = (v: unknown): string[] => {
+  if (Array.isArray(v)) return v.filter(Boolean).map(String);
+  if (typeof v === "string") return v.split(",").map((s) => s.trim()).filter(Boolean);
+  return [];
+};
