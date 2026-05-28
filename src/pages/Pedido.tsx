@@ -33,6 +33,67 @@ const pedidoSchema = z.object({
 
 const stepLabels = ["Você", "Evento", "Entrega", "Pedido", "Revisão"];
 
+/* ===== Cardápio (opções estruturadas para o cliente) ===== */
+const SABORES_DOCES = [
+  "Brigadeiro tradicional",
+  "Beijinho",
+  "Cajuzinho",
+  "Casadinho",
+  "Brigadeiro de pistache",
+  "Ninho com Nutella",
+  "Ferrero",
+  "Maracujá",
+  "Limão siciliano",
+  "Doce de leite",
+  "Morango com Nutella",
+  "Churros",
+];
+const CORES_FORMINHA = [
+  "Dourada",
+  "Rosé",
+  "Branca",
+  "Preta",
+  "Vermelha",
+  "Bordô",
+  "Prata",
+  "Marfim",
+];
+const TAMANHOS_BOLO = [
+  "P — até 20 fatias (~1,5kg)",
+  "M — até 40 fatias (~2,5kg)",
+  "G — até 60 fatias (~4kg)",
+  "GG — 80+ fatias (5kg+)",
+];
+const MASSAS_BOLO = [
+  "Baunilha",
+  "Chocolate",
+  "Red Velvet",
+  "Cenoura",
+  "Limão",
+  "Coco",
+  "Amêndoas",
+];
+const RECHEIOS_BOLO = [
+  "Brigadeiro",
+  "Brigadeiro com morango",
+  "Doce de leite",
+  "Ninho com Nutella",
+  "Ninho com morango",
+  "Limão",
+  "Coco",
+  "Maracujá",
+  "Pistache",
+  "Ganache de chocolate",
+];
+const COBERTURAS_BOLO = [
+  "Chantilly",
+  "Buttercream",
+  "Fondant bordô",
+  "Fondant marfim",
+  "Ganache",
+  "Naked (sem cobertura)",
+];
+
 const Pedido = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -92,6 +153,31 @@ const Pedido = () => {
       if (itens.length === 0) {
         toast.error("Adicione ao menos um item.");
         return;
+      }
+      for (const [i, it] of itens.entries()) {
+        const tag = `Item ${i + 1}`;
+        if (it.tipo === "doce") {
+          if (!it.quantidade || it.quantidade < 1) {
+            toast.error(`${tag}: informe a quantidade.`);
+            return;
+          }
+          if (!it.sabores || it.sabores.length === 0) {
+            toast.error(`${tag}: escolha ao menos um sabor.`);
+            return;
+          }
+          if (!it.corForminha) {
+            toast.error(`${tag}: escolha a cor da forminha.`);
+            return;
+          }
+        } else {
+          if (!it.tamanho) { toast.error(`${tag}: escolha o tamanho do bolo.`); return; }
+          if (!it.massa) { toast.error(`${tag}: escolha a massa.`); return; }
+          if (!it.recheios || it.recheios.length === 0) {
+            toast.error(`${tag}: escolha ao menos um recheio.`);
+            return;
+          }
+          if (!it.cobertura) { toast.error(`${tag}: escolha a cobertura.`); return; }
+        }
       }
     }
     setStep((s) => Math.min(s + 1, stepLabels.length - 1));
