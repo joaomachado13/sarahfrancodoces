@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { LayoutDashboard, BarChart3, Users, FileDown, Search, CalendarDays, Clock, Sparkles, TrendingUp, DollarSign, CheckCircle2, Timer, GripVertical } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, FileDown, Search, CalendarDays, Clock, Sparkles, TrendingUp, DollarSign, CheckCircle2, Timer, GripVertical, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-sarah-franco.png";
@@ -59,6 +59,9 @@ type PricedOrderItem = OrderItem & { valor?: number | null };
 
 const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "desconhecido";
 
+const ADMIN_START_DATE = "2026-05-01";
+const ADMIN_START_AT = new Date(`${ADMIN_START_DATE}T00:00:00`).getTime();
+
 const statusLabels = {
   novo: "Novo",
   em_orcamento: "Em orçamento",
@@ -68,10 +71,11 @@ const statusLabels = {
 const fmtMoney = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
-type Tab = "pedidos" | "analises" | "clientes";
+type Tab = "pedidos" | "calendario" | "analises" | "clientes";
 
 const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "pedidos", label: "Pedidos", icon: LayoutDashboard },
+  { id: "calendario", label: "Calendário", icon: CalendarDays },
   { id: "analises", label: "Análises", icon: BarChart3 },
   { id: "clientes", label: "Clientes", icon: Users },
 ];
@@ -97,28 +101,98 @@ const statusPanel = {
 
 const fmtDate = (date: string) => new Date(`${date}T00:00`).toLocaleDateString("pt-BR");
 
+const toText = (value: unknown): string => {
+  if (Array.isArray(value)) return value.map(toText).filter(Boolean).join(", ");
+  if (typeof value === "string") return value.trim();
+  if (value == null) return "";
+  if (typeof value === "number") return String(value);
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return toText(record.nome ?? record.name ?? record.label ?? record.titulo ?? record.value);
+  }
+  return "";
+};
+
 /** Lê o sabor de um doce (compatível com pedidos antigos que usavam `sabores`). */
 export const getSabor = (it: any): string => {
-  if (it?.sabor) return it.sabor;
-  if (Array.isArray(it?.sabores)) return it.sabores.filter(Boolean).join(", ");
-  if (typeof it?.sabores === "string") return it.sabores;
-  return "";
+  return toText(it?.sabor ?? it?.saborDoce ?? it?.sabor_doce ?? it?.sabores ?? it?.saboresSelecionados);
 };
 
 /** Lê o recheio de um bolo (compatível com `recheios` antigo). */
 export const getRecheio = (it: any): string => {
-  if (it?.recheio) return it.recheio;
-  if (Array.isArray(it?.recheios)) return it.recheios.filter(Boolean).join(", ");
-  if (typeof it?.recheios === "string") return it.recheios;
-  return "";
+  return toText(it?.recheio ?? it?.recheios);
 };
 
 /** Lê o adicional de um bolo (compatível com `adicionais` antigo). */
 export const getAdicional = (it: any): string => {
-  if (it?.adicional) return it.adicional;
-  if (Array.isArray(it?.adicionais)) return it.adicionais.filter(Boolean).join(", ");
-  if (typeof it?.adicionais === "string") return it.adicionais;
-  return "";
+  return toText(it?.adicional ?? it?.adicionais);
+};
+
+const normalizeItem = (item: unknown): OrderItem => {
+  const source = (item || {}) as Record<string, unknown>;
+  if (source.tipo === "bolo") {
+    return {
+      ...source,
+      tipo: "bolo",
+      tamanho: toText(source.tamanho),
+      massa: toText(source.massa),
+      recheio: getRecheio(source),
+      cobertura: toText(source.cobertura),
+      adicional: getAdicional(source),
+      observacoes: toText(source.observacoes),
+    } as OrderItem;
+  }
+
+  return {
+    ...source,
+    tipo: "doce",
+    quantidade: Number(source.quantidade || 0),
+    sabor: getSabor(source),
+    corForminha: toText(source.corForminha ?? source.cor_forminha),
+    observacoes: toText(source.observacoes),
+  } as OrderItem;
+};
+
+const normalizePedido = (pedido: PedidoRow): PedidoRow => ({
+  ...pedido,
+  itens: Array.isArray(pedido.itens) ? pedido.itens.map(normalizeItem) : [],
+});
+
+const getPedidoDeadline = (pedido: PedidoRow) => {
+  const date = pedido.tipo_logistica === "entrega"
+    ? pedido.data_entrega || pedido.data_evento
+    : pedido.data_retirada || pedido.data_evento;
+  const time = pedido.tipo_logistica === "entrega"
+    ? pedido.horario_entrega || pedido.horario_evento
+    : pedido.horario_retirada || pedido.horario_evento;
+  return new Date(`${date}T${time || "23:59"}`);
+};
+
+const getPedidoDateKey = (pedido: PedidoRow) => {
+  return pedido.tipo_logistica === "entrega"
+    ? pedido.data_entrega || pedido.data_evento
+    : pedido.data_retirada || pedido.data_evento;
+};
+
+const formatDeadline = (pedido: PedidoRow) =>
+  getPedidoDeadline(pedido).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
+const formatRemaining = (pedido: PedidoRow) => {
+  const diff = getPedidoDeadline(pedido).getTime() - Date.now();
+  const abs = Math.abs(diff);
+  const days = Math.floor(abs / 86_400_000);
+  const hours = Math.floor((abs % 86_400_000) / 3_600_000);
+  const minutes = Math.floor((abs % 3_600_000) / 60_000);
+  const text = days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
+  return diff < 0 ? `atrasado há ${text}` : `faltam ${text}`;
+};
+
+const urgencyClass = (pedido: PedidoRow) => {
+  const hours = (getPedidoDeadline(pedido).getTime() - Date.now()) / 3_600_000;
+  if (hours < 0) return "border-burgundy bg-burgundy/10 text-burgundy";
+  if (hours <= 24) return "border-burgundy/60 bg-burgundy/8 text-burgundy";
+  if (hours <= 72) return "border-gold/60 bg-gold/15 text-petrol";
+  return "border-petrol/15 bg-background text-petrol/70";
 };
 
 const itemSummary = (item: OrderItem) => {
@@ -165,15 +239,17 @@ const AdminDashboard = () => {
   const [reportLoading, setReportLoading] = useState(false);
   const [insightLoading, setInsightLoading] = useState(false);
   const [reportData, setReportData] = useState<PerformanceReportData | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
 
   const sortPedidos = (rows: PedidoRow[]) =>
-    [...rows].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    [...rows].map(normalizePedido).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("pedidos")
       .select("*")
+      .gte("created_at", ADMIN_START_DATE)
       .order("created_at", { ascending: false });
     if (error) toast.error("Erro ao carregar pedidos: " + error.message);
     else setPedidos(sortPedidos((data || []) as unknown as PedidoRow[]));
@@ -200,11 +276,11 @@ const AdminDashboard = () => {
         { event: "*", schema: "public", table: "pedidos" },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            const next = payload.new as PedidoRow;
+            const next = normalizePedido(payload.new as PedidoRow);
             setPedidos((prev) => sortPedidos(prev.some((p) => p.id === next.id) ? prev : [next, ...prev]));
           }
           if (payload.eventType === "UPDATE") {
-            const next = payload.new as PedidoRow;
+            const next = normalizePedido(payload.new as PedidoRow);
             setPedidos((prev) => sortPedidos(prev.map((p) => (p.id === next.id ? next : p))));
             setSelected((current) => (current?.id === next.id ? next : current));
           }
@@ -255,6 +331,24 @@ const AdminDashboard = () => {
     }
     return currentMonthPedidos;
   }, [currentMonthPedidos, customEnd, customStart, pedidos, periodFilter]);
+
+  const upcomingPedidos = useMemo(() => {
+    return [...pedidos]
+      .filter((pedido) => pedido.status !== "finalizado")
+      .sort((a, b) => getPedidoDeadline(a).getTime() - getPedidoDeadline(b).getTime())
+      .slice(0, 6);
+  }, [pedidos]);
+
+  const calendarPedidosByDay = useMemo(() => {
+    const grouped: Record<string, PedidoRow[]> = {};
+    pedidos.forEach((pedido) => {
+      const key = getPedidoDateKey(pedido);
+      grouped[key] = [...(grouped[key] || []), pedido].sort(
+        (a, b) => getPedidoDeadline(a).getTime() - getPedidoDeadline(b).getTime(),
+      );
+    });
+    return grouped;
+  }, [pedidos]);
 
   const kpis = useMemo(() => {
     const pedidosComValor = pedidos.filter((p) => p.valor_total != null);
@@ -337,6 +431,19 @@ const AdminDashboard = () => {
     } finally {
       setReportLoading(false);
     }
+  };
+
+  const deletePedido = async (pedido: PedidoRow) => {
+    const ok = window.confirm(`Excluir o pedido de ${pedido.nome_cliente}? Essa ação não pode ser desfeita.`);
+    if (!ok) return;
+    const { error } = await supabase.from("pedidos").delete().eq("id", pedido.id);
+    if (error) {
+      toast.error("Erro ao excluir pedido: " + error.message);
+      return;
+    }
+    toast.success("Pedido excluído");
+    setPedidos((prev) => prev.filter((p) => p.id !== pedido.id));
+    if (selected?.id === pedido.id) setSelected(null);
   };
 
   const updateStatus = async (id: string, status: PedidoRow["status"]) => {
@@ -433,6 +540,9 @@ const AdminDashboard = () => {
             <h1 className="mt-3 font-serif text-3xl text-petrol md:text-4xl">
               {activeTab === "pedidos" && (
                 <>CRM de <span className="font-script text-burgundy">pedidos</span></>
+              )}
+              {activeTab === "calendario" && (
+                <>Calendário de <span className="font-script text-burgundy">entregas</span></>
               )}
               {activeTab === "analises" && (
                 <>Análises <span className="font-script text-burgundy">& Insights</span></>
@@ -703,6 +813,17 @@ const AdminDashboard = () => {
               </div>
             )}
 
+            {activeTab === "calendario" && (
+              <CalendarTab
+                pedidos={pedidos}
+                upcomingPedidos={upcomingPedidos}
+                calendarPedidosByDay={calendarPedidosByDay}
+                calendarMonth={calendarMonth}
+                setCalendarMonth={setCalendarMonth}
+                onSelectPedido={setSelected}
+              />
+            )}
+
             {activeTab === "clientes" && <ClientesTab pedidos={pedidos} />}
           </>
         )}
@@ -720,6 +841,7 @@ const AdminDashboard = () => {
           }}
           onStatus={(s) => updateStatus(selected.id, s)}
           onSaveOrcamento={(v, obs, itens) => updateValor(selected.id, v, obs, itens)}
+          onDelete={() => deletePedido(selected)}
         />
       )}
     </div>
@@ -740,6 +862,130 @@ const InsightList = ({ title, items }: { title: string; items: string[] }) => (
   </div>
 );
 
+const CalendarTab = ({
+  pedidos,
+  upcomingPedidos,
+  calendarPedidosByDay,
+  calendarMonth,
+  setCalendarMonth,
+  onSelectPedido,
+}: {
+  pedidos: PedidoRow[];
+  upcomingPedidos: PedidoRow[];
+  calendarPedidosByDay: Record<string, PedidoRow[]>;
+  calendarMonth: Date;
+  setCalendarMonth: React.Dispatch<React.SetStateAction<Date>>;
+  onSelectPedido: (pedido: PedidoRow) => void;
+}) => {
+  const year = calendarMonth.getFullYear();
+  const month = calendarMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startOffset = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [
+    ...Array.from({ length: startOffset }, (_, i) => ({ key: `empty-${i}`, day: null as number | null })),
+    ...Array.from({ length: daysInMonth }, (_, i) => ({ key: `day-${i + 1}`, day: i + 1 })),
+  ];
+  const monthLabel = calendarMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  const moveMonth = (amount: number) => {
+    setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1));
+  };
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
+      <section className="rounded-2xl border border-burgundy/12 bg-cream p-5 shadow-soft">
+        <div className="flex items-center gap-2">
+          <AlertTriangle size={16} className="text-burgundy" />
+          <p className="text-[0.65rem] uppercase tracking-[0.25em] text-burgundy/70">Prioridade</p>
+        </div>
+        <h2 className="mt-2 font-serif text-2xl text-petrol">Próximas entregas</h2>
+        <div className="mt-5 space-y-3">
+          {upcomingPedidos.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-burgundy/18 bg-background p-5 text-sm text-petrol/45">
+              Nenhum pedido pendente no momento.
+            </p>
+          ) : (
+            upcomingPedidos.map((pedido) => (
+              <button
+                key={pedido.id}
+                onClick={() => onSelectPedido(pedido)}
+                className={`w-full rounded-xl border p-4 text-left transition-all hover:border-burgundy/50 ${urgencyClass(pedido)}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-petrol">{pedido.nome_cliente}</p>
+                    <p className="mt-1 text-xs text-petrol/55">{formatDeadline(pedido)}</p>
+                  </div>
+                  <span className="rounded-full border border-burgundy/15 bg-cream px-2 py-0.5 text-[0.58rem] uppercase tracking-[0.16em] text-burgundy">
+                    {statusLabels[pedido.status]}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm font-semibold text-burgundy">{formatRemaining(pedido)}</p>
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-petrol/60">{resumoPedido(pedido)}</p>
+              </button>
+            ))
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-burgundy/12 bg-cream p-5 shadow-soft">
+        <div className="flex flex-col gap-3 border-b border-burgundy/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[0.65rem] uppercase tracking-[0.25em] text-burgundy/70">Agenda</p>
+            <h2 className="mt-1 font-serif text-2xl capitalize text-petrol">{monthLabel}</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => moveMonth(-1)} className="rounded-xl border border-burgundy/20 p-2 text-petrol/70 hover:border-burgundy hover:text-burgundy" aria-label="Mês anterior">
+              <ChevronLeft size={16} />
+            </button>
+            <button onClick={() => setCalendarMonth(new Date())} className="rounded-xl border border-burgundy/20 px-3 py-2 text-[0.62rem] uppercase tracking-[0.18em] text-petrol/70 hover:border-burgundy hover:text-burgundy">
+              Hoje
+            </button>
+            <button onClick={() => moveMonth(1)} className="rounded-xl border border-burgundy/20 p-2 text-petrol/70 hover:border-burgundy hover:text-burgundy" aria-label="Próximo mês">
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-7 gap-2 text-center text-[0.6rem] uppercase tracking-[0.18em] text-petrol/45">
+          {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => <span key={day}>{day}</span>)}
+        </div>
+        <div className="mt-2 grid grid-cols-7 gap-2">
+          {cells.map(({ key, day }) => {
+            const dateKey = day ? `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}` : "";
+            const dayPedidos = dateKey ? calendarPedidosByDay[dateKey] || [] : [];
+            return (
+              <div key={key} className="min-h-28 rounded-xl border border-burgundy/10 bg-background p-2">
+                {day && (
+                  <>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-semibold text-petrol">{day}</span>
+                      {dayPedidos.length > 0 && <span className="rounded-full bg-burgundy px-1.5 py-0.5 text-[0.55rem] text-cream">{dayPedidos.length}</span>}
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      {dayPedidos.slice(0, 3).map((pedido) => (
+                        <button
+                          key={pedido.id}
+                          onClick={() => onSelectPedido(pedido)}
+                          className="block w-full truncate rounded-md bg-burgundy/8 px-2 py-1 text-left text-[0.6rem] text-petrol hover:bg-burgundy/15"
+                        >
+                          {pedido.nome_cliente}
+                        </button>
+                      ))}
+                      {dayPedidos.length > 3 && <p className="text-[0.55rem] text-petrol/45">+{dayPedidos.length - 3} pedido(s)</p>}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+};
+
 /* ════════════════════════════════════════════════ */
 /* Drawer lateral de pedido — preservado intacto  */
 /* ════════════════════════════════════════════════ */
@@ -748,11 +994,13 @@ const PedidoDetail = ({
   onClose,
   onStatus,
   onSaveOrcamento,
+  onDelete,
 }: {
   pedido: PedidoRow;
   onClose: () => void;
   onStatus: (s: PedidoRow["status"]) => void;
   onSaveOrcamento: (valor: number | null, obs: string | null, itens: OrderItem[]) => void;
+  onDelete: () => void;
 }) => {
   const [valor, setValor] = useState(pedido.valor_total?.toString() || "");
   const [obs, setObs] = useState(pedido.observacoes_admin || "");
@@ -785,6 +1033,13 @@ const PedidoDetail = ({
             >
               {exporting ? "Gerando…" : "Baixar PDF"}
             </button>
+              <button
+                onClick={onDelete}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-burgundy/25 px-3 py-2 text-[0.62rem] uppercase tracking-[0.2em] text-burgundy transition-colors hover:bg-burgundy hover:text-cream"
+              >
+                <Trash2 size={13} />
+                Excluir
+              </button>
             <button onClick={onClose} className="text-xs uppercase tracking-[0.2em] text-petrol/60 hover:text-burgundy">
               fechar ✕
             </button>
