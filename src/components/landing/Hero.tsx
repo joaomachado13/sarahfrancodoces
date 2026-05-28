@@ -58,6 +58,8 @@ export const Hero = () => {
                 className="h-[380px] w-full object-cover sm:h-[480px] md:h-[560px] lg:h-[640px]"
                 width={1024}
                 height={1280}
+                fetchPriority="high"
+                decoding="async"
               />
               {/* Subtle overlay for sophistication & contrast */}
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-burgundy-deep/35 via-burgundy-deep/5 to-transparent" />

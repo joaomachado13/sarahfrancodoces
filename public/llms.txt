@@ -1,0 +1,8 @@
+# Sarah Franco Doces & Bolos
+
+> Confeitaria artesanal premium em São Paulo. Bolos e doces 100% personalizados para casamentos, aniversários e eventos especiais.
+
+## Pages
+
+- [Home](/): Apresentação da marca, especialidades, processo e depoimentos.
+- [Orçamento](/pedido): Formulário para solicitar orçamento personalizado de doces e bolos.
