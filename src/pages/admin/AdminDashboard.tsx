@@ -432,6 +432,19 @@ const AdminDashboard = () => {
     }
   };
 
+  const deletePedido = async (pedido: PedidoRow) => {
+    const ok = window.confirm(`Excluir o pedido de ${pedido.nome_cliente}? Essa ação não pode ser desfeita.`);
+    if (!ok) return;
+    const { error } = await supabase.from("pedidos").delete().eq("id", pedido.id);
+    if (error) {
+      toast.error("Erro ao excluir pedido: " + error.message);
+      return;
+    }
+    toast.success("Pedido excluído");
+    setPedidos((prev) => prev.filter((p) => p.id !== pedido.id));
+    if (selected?.id === pedido.id) setSelected(null);
+  };
+
   const updateStatus = async (id: string, status: PedidoRow["status"]) => {
     const current = pedidos.find((p) => p.id === id);
     if (!current || current.status === status) return;
@@ -813,6 +826,7 @@ const AdminDashboard = () => {
           }}
           onStatus={(s) => updateStatus(selected.id, s)}
           onSaveOrcamento={(v, obs, itens) => updateValor(selected.id, v, obs, itens)}
+          onDelete={() => deletePedido(selected)}
         />
       )}
     </div>
