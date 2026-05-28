@@ -842,11 +842,15 @@ const StepReview = ({
   evento,
   logistica,
   itens,
+  inspiracoes,
+  setInspiracoes,
 }: {
   cliente: CustomerData;
   evento: EventData;
   logistica: LogisticsData;
   itens: OrderItem[];
+  inspiracoes: string[];
+  setInspiracoes: React.Dispatch<React.SetStateAction<string[]>>;
 }) => (
   <div className="space-y-8">
     <SectionTitle
@@ -886,16 +890,20 @@ const StepReview = ({
             </p>
             {it.tipo === "doce" ? (
               <p className="mt-1 text-sm text-petrol/80">
-                {it.quantidade} unid. · forminha {it.corForminha || "—"} · {it.sabores.join(", ") || "(sabores a definir)"}
+                {it.quantidade} unid. · forminha {it.corForminha || "—"} · {it.sabor || "(sabor a definir)"}
               </p>
             ) : (
               <p className="mt-1 text-sm text-petrol/80">
-                {it.tamanho} · {it.massa} / {it.recheios.join(", ") || "—"} / {it.cobertura}
+                {it.tamanho} · {it.massa} / {it.recheio || "—"} / {it.cobertura}
+                {it.adicional ? ` + ${it.adicional}` : ""}
               </p>
             )}
           </li>
         ))}
       </ul>
+    </ReviewBlock>
+    <ReviewBlock title="Inspirações (opcional)">
+      <InspiracoesUploader urls={inspiracoes} setUrls={setInspiracoes} />
     </ReviewBlock>
   </div>
 );
