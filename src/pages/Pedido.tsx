@@ -694,12 +694,6 @@ const DoceFields = ({
   item: DoceItem;
   updateItem: (id: string, patch: Partial<OrderItem>) => void;
 }) => {
-  const toggleSabor = (s: string) => {
-    const has = item.sabores.includes(s);
-    updateItem(item.id, {
-      sabores: has ? item.sabores.filter((x) => x !== s) : [...item.sabores, s],
-    });
-  };
   return (
     <div className="space-y-5">
       <div className="grid gap-5 md:grid-cols-2">
@@ -713,29 +707,23 @@ const DoceFields = ({
           />
         </Field>
         <Field label="Cor da forminha *">
-          <ChipGroup
-            options={CORES_FORMINHA}
-            selected={item.corForminha ? [item.corForminha] : []}
-            onToggle={(v) => updateItem(item.id, { corForminha: v })}
-            single
+          <input
+            className={inputCls}
+            value={item.corForminha}
+            onChange={(e) => updateItem(item.id, { corForminha: e.target.value })}
+            placeholder="Ex.: dourada, rosé, branca…"
           />
         </Field>
       </div>
-      <div>
-        <span className="mb-2 block text-[0.7rem] font-semibold uppercase tracking-[0.25em] text-petrol">
-          Sabores * {item.sabores.length > 0 ? `(${item.sabores.length} selecionados)` : ""}
-        </span>
-        <div className="space-y-4">
-          {DOCES_CATEGORIAS.map((cat) => (
-            <div key={cat.titulo}>
-              <p className="mb-2 text-[0.65rem] uppercase tracking-[0.22em] text-burgundy/80">
-                {cat.titulo}
-              </p>
-              <ChipGroup options={cat.itens} selected={item.sabores} onToggle={toggleSabor} />
-            </div>
-          ))}
-        </div>
-      </div>
+      <Field label="Sabor *">
+        <PickerButton
+          value={item.sabor}
+          placeholder="Escolher sabor"
+          groups={DOCES_CATEGORIAS.map((c) => ({ titulo: c.titulo, itens: c.itens }))}
+          onPick={(v) => updateItem(item.id, { sabor: v })}
+          title="Escolha um sabor"
+        />
+      </Field>
       <Field label="Observações (opcional)">
         <textarea
           rows={2}
@@ -756,27 +744,14 @@ const BoloFields = ({
   item: BoloItem;
   updateItem: (id: string, patch: Partial<OrderItem>) => void;
 }) => {
-  const toggleRecheio = (s: string) => {
-    const has = item.recheios.includes(s);
-    updateItem(item.id, {
-      recheios: has ? item.recheios.filter((x) => x !== s) : [...item.recheios, s],
-    });
-  };
-  const toggleAdicional = (s: string) => {
-    const list = item.adicionais ?? [];
-    const has = list.includes(s);
-    updateItem(item.id, {
-      adicionais: has ? list.filter((x) => x !== s) : [...list, s],
-    });
-  };
   return (
     <div className="space-y-5">
-      <Field label="Tamanho *">
-        <ChipGroup
-          options={TAMANHOS_BOLO}
-          selected={item.tamanho ? [item.tamanho] : []}
-          onToggle={(v) => updateItem(item.id, { tamanho: v })}
-          single
+      <Field label="Tamanho do bolo * (em kg)">
+        <input
+          className={inputCls}
+          value={item.tamanho}
+          onChange={(e) => updateItem(item.id, { tamanho: e.target.value })}
+          placeholder="Ex.: 3 kg, 5 kg, 10 kg…"
         />
       </Field>
       <Field label="Massa *">
@@ -787,19 +762,33 @@ const BoloFields = ({
           single
         />
       </Field>
-      <Field label={`Recheios * ${item.recheios.length > 0 ? `(${item.recheios.length} selecionados)` : ""}`}>
-        <ChipGroup options={RECHEIOS_BOLO} selected={item.recheios} onToggle={toggleRecheio} />
-      </Field>
-      <Field label="Cobertura *">
-        <ChipGroup
-          options={COBERTURAS_BOLO}
-          selected={item.cobertura ? [item.cobertura] : []}
-          onToggle={(v) => updateItem(item.id, { cobertura: v })}
-          single
+      <Field label="Recheio *">
+        <PickerButton
+          value={item.recheio}
+          placeholder="Escolher recheio"
+          groups={[{ titulo: "Recheios", itens: RECHEIOS_BOLO }]}
+          onPick={(v) => updateItem(item.id, { recheio: v })}
+          title="Escolha um recheio"
         />
       </Field>
-      <Field label={`Adicionais (opcional) ${item.adicionais?.length ? `(${item.adicionais.length} selecionados)` : ""}`}>
-        <ChipGroup options={ADICIONAIS_BOLO} selected={item.adicionais ?? []} onToggle={toggleAdicional} />
+      <Field label="Cobertura *">
+        <PickerButton
+          value={item.cobertura}
+          placeholder="Escolher cobertura"
+          groups={[{ titulo: "Coberturas", itens: COBERTURAS_BOLO }]}
+          onPick={(v) => updateItem(item.id, { cobertura: v })}
+          title="Escolha uma cobertura"
+        />
+      </Field>
+      <Field label="Adicional (opcional)">
+        <PickerButton
+          value={item.adicional}
+          placeholder="Nenhum"
+          groups={[{ titulo: "Adicionais", itens: ADICIONAIS_BOLO }]}
+          onPick={(v) => updateItem(item.id, { adicional: v })}
+          title="Escolha um adicional"
+          allowClear
+        />
       </Field>
       <Field label="Observações (opcional)">
         <textarea
