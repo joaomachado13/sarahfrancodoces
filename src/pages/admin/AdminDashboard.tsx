@@ -1007,6 +1007,45 @@ const PedidoDetail = ({
   const [valoresItens, setValoresItens] = useState<string[]>(
     pedido.itens.map((it: any) => (it?.valor != null ? String(it.valor) : "")),
   );
+  const [inspiracoes, setInspiracoes] = useState<string[]>([]);
+  const [inspiracoesLoading, setInspiracoesLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const urls = (pedido as any).inspiracao_urls as string[] | undefined;
+    if (!urls || urls.length === 0) {
+      setInspiracoes([]);
+      return;
+    }
+    setInspiracoesLoading(true);
+    (async () => {
+      const resolved: string[] = [];
+      for (const entry of urls) {
+        if (!entry) continue;
+        // Pedidos antigos podem ter URL pública completa
+        if (/^https?:\/\//i.test(entry)) {
+          resolved.push(entry);
+          continue;
+        }
+        // Caminho dentro do bucket privado → gerar URL assinada
+        const path = entry.replace(/^\/+/, "");
+        const { data, error } = await supabase
+          .storage
+          .from("pedido-inspiracoes")
+          .createSignedUrl(path, 60 * 60);
+        if (!error && data?.signedUrl) resolved.push(data.signedUrl);
+      }
+      if (!cancelled) {
+        setInspiracoes(resolved);
+        setInspiracoesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pedido]);
+
+  const inspiracoesCount = ((pedido as any).inspiracao_urls as string[] | undefined)?.length || 0;
 
   const subtotal = valoresItens.reduce(
     (sum, v) => sum + (v ? Number(v.replace(",", ".")) || 0 : 0),
