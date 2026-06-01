@@ -1002,12 +1002,25 @@ const PedidoDetail = ({
   onSaveOrcamento: (valor: number | null, obs: string | null, itens: OrderItem[]) => void;
   onDelete: () => void;
 }) => {
-  const [valor, setValor] = useState(pedido.valor_total?.toString() || "");
   const [obs, setObs] = useState(pedido.observacoes_admin || "");
   const [exporting, setExporting] = useState(false);
+  const [valoresItens, setValoresItens] = useState<string[]>(
+    pedido.itens.map((it: any) => (it?.valor != null ? String(it.valor) : "")),
+  );
+
+  const subtotal = valoresItens.reduce(
+    (sum, v) => sum + (v ? Number(v.replace(",", ".")) || 0 : 0),
+    0,
+  );
+  const algumPreenchido = valoresItens.some((v) => v && !isNaN(Number(v.replace(",", "."))));
 
   const salvar = () => {
-    onSaveOrcamento(valor ? Number(valor) : null, obs || null, pedido.itens);
+    const itensComValor = pedido.itens.map((it, idx) => {
+      const raw = valoresItens[idx];
+      const num = raw ? Number(raw.replace(",", ".")) : NaN;
+      return { ...it, valor: isNaN(num) ? null : num } as OrderItem;
+    });
+    onSaveOrcamento(algumPreenchido ? subtotal : null, obs || null, itensComValor);
   };
 
   return (
@@ -1099,9 +1112,31 @@ const PedidoDetail = ({
                       {it.observacoes && <p className="text-petrol/60">Obs: {it.observacoes}</p>}
                     </div>
                   )}
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="text-[0.62rem] uppercase tracking-[0.2em] text-petrol/60">
+                      Valor do item (R$)
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={valoresItens[i] ?? ""}
+                      onChange={(e) => {
+                        const next = [...valoresItens];
+                        next[i] = e.target.value;
+                        setValoresItens(next);
+                      }}
+                      className="w-32 rounded-lg border border-burgundy/20 bg-background px-3 py-2 text-sm text-petrol focus:border-burgundy focus:outline-none"
+                      placeholder="0,00"
+                    />
+                  </div>
                 </li>
               ))}
             </ul>
+            <div className="mt-6 flex items-center justify-between border-t border-burgundy/15 pt-4">
+              <span className="text-[0.7rem] uppercase tracking-[0.25em] text-burgundy">Subtotal</span>
+              <span className="font-serif text-2xl text-petrol">{fmtMoney(subtotal)}</span>
+            </div>
           </Block>
 
           <Block title="Status">
@@ -1124,20 +1159,12 @@ const PedidoDetail = ({
 
           <Block title="Orçamento">
             <div className="space-y-4">
-              <label className="block">
-                  <span className="mb-2 block text-[0.65rem] uppercase tracking-[0.2em] text-petrol/60">
-                    Valor total (R$)
-                  </span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={valor}
-                    onChange={(e) => setValor(e.target.value)}
-                    className="w-full rounded-lg border border-burgundy/20 bg-background px-4 py-3 text-sm text-petrol focus:border-burgundy focus:outline-none"
-                    placeholder="0,00"
-                  />
-                </label>
+              <div className="flex items-center justify-between rounded-lg border border-burgundy/20 bg-background px-4 py-3">
+                <span className="text-[0.65rem] uppercase tracking-[0.2em] text-petrol/60">
+                  Valor total (soma dos itens)
+                </span>
+                <span className="font-serif text-xl text-petrol">{fmtMoney(subtotal)}</span>
+              </div>
               <label className="block">
                 <span className="mb-2 block text-[0.65rem] uppercase tracking-[0.2em] text-petrol/60">
                   Observações internas
