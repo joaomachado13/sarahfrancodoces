@@ -1179,6 +1179,36 @@ const PedidoDetail = ({
           </Block>
 
           <Block title="Status">
+          {inspiracoesCount > 0 && (
+            <Block title={`Fotos de inspiração (${inspiracoesCount})`}>
+              {inspiracoesLoading ? (
+                <p className="text-xs text-petrol/60">Carregando imagens…</p>
+              ) : inspiracoes.length === 0 ? (
+                <p className="text-xs text-petrol/60">Não foi possível carregar as imagens.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {inspiracoes.map((url, idx) => (
+                    <a
+                      key={idx}
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group relative block overflow-hidden rounded-lg border border-burgundy/15 bg-background"
+                    >
+                      <img
+                        src={url}
+                        alt={`Inspiração ${idx + 1}`}
+                        loading="lazy"
+                        className="aspect-square w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </Block>
+          )}
+
+          <div style={{ display: "none" }}>
             <div className="flex flex-wrap gap-2">
               {(["novo", "em_orcamento", "finalizado"] as const).map((s) => (
                 <button
