@@ -1095,7 +1095,7 @@ const InspiracoesUploader = ({
           continue;
         }
         const ext = file.name.split(".").pop() || "jpg";
-        const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const path = `incoming/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
         const { error } = await supabase.storage
           .from("pedido-inspiracoes")
           .upload(path, file, { contentType: file.type, upsert: false });
@@ -1104,8 +1104,8 @@ const InspiracoesUploader = ({
           toast.error(`Falha ao enviar "${file.name}".`);
           continue;
         }
-        const { data } = supabase.storage.from("pedido-inspiracoes").getPublicUrl(path);
-        uploaded.push(data.publicUrl);
+        // Bucket é privado — armazenamos apenas o path; admins geram signed URLs.
+        uploaded.push(path);
       }
       if (uploaded.length) {
         setUrls((prev) => [...prev, ...uploaded]);
