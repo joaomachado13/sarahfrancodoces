@@ -1018,7 +1018,7 @@ const PedidoDetail = ({
     const itensComValor = pedido.itens.map((it, idx) => {
       const raw = valoresItens[idx];
       const num = raw ? Number(raw.replace(",", ".")) : NaN;
-      return { ...it, valor: isNaN(num) ? null : num } as OrderItem;
+      return { ...(it as any), valor: isNaN(num) ? null : num } as OrderItem;
     });
     onSaveOrcamento(algumPreenchido ? subtotal : null, obs || null, itensComValor);
   };
