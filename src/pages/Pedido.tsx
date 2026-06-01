@@ -29,7 +29,7 @@ const pedidoSchema = z.object({
   data_retirada: z.string().nullable(),
   horario_retirada: z.string().nullable(),
   itens: z.array(z.any()).min(1),
-  inspiracao_urls: z.array(z.string().url()).max(10).optional(),
+  inspiracao_urls: z.array(z.string().min(1).max(500)).max(10).optional(),
 });
 
 const stepLabels = ["Você", "Evento", "Entrega", "Pedido", "Revisão"];
