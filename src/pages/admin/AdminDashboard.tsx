@@ -1007,6 +1007,45 @@ const PedidoDetail = ({
   const [valoresItens, setValoresItens] = useState<string[]>(
     pedido.itens.map((it: any) => (it?.valor != null ? String(it.valor) : "")),
   );
+  const [inspiracoes, setInspiracoes] = useState<string[]>([]);
+  const [inspiracoesLoading, setInspiracoesLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const urls = (pedido as any).inspiracao_urls as string[] | undefined;
+    if (!urls || urls.length === 0) {
+      setInspiracoes([]);
+      return;
+    }
+    setInspiracoesLoading(true);
+    (async () => {
+      const resolved: string[] = [];
+      for (const entry of urls) {
+        if (!entry) continue;
+        // Pedidos antigos podem ter URL pública completa
+        if (/^https?:\/\//i.test(entry)) {
+          resolved.push(entry);
+          continue;
+        }
+        // Caminho dentro do bucket privado → gerar URL assinada
+        const path = entry.replace(/^\/+/, "");
+        const { data, error } = await supabase
+          .storage
+          .from("pedido-inspiracoes")
+          .createSignedUrl(path, 60 * 60);
+        if (!error && data?.signedUrl) resolved.push(data.signedUrl);
+      }
+      if (!cancelled) {
+        setInspiracoes(resolved);
+        setInspiracoesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pedido]);
+
+  const inspiracoesCount = ((pedido as any).inspiracao_urls as string[] | undefined)?.length || 0;
 
   const subtotal = valoresItens.reduce(
     (sum, v) => sum + (v ? Number(v.replace(",", ".")) || 0 : 0),
@@ -1138,6 +1177,35 @@ const PedidoDetail = ({
               <span className="font-serif text-2xl text-petrol">{fmtMoney(subtotal)}</span>
             </div>
           </Block>
+
+          {inspiracoesCount > 0 && (
+            <Block title={`Fotos de inspiração (${inspiracoesCount})`}>
+              {inspiracoesLoading ? (
+                <p className="text-xs text-petrol/60">Carregando imagens…</p>
+              ) : inspiracoes.length === 0 ? (
+                <p className="text-xs text-petrol/60">Não foi possível carregar as imagens.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {inspiracoes.map((url, idx) => (
+                    <a
+                      key={idx}
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group relative block overflow-hidden rounded-lg border border-burgundy/15 bg-background"
+                    >
+                      <img
+                        src={url}
+                        alt={`Inspiração ${idx + 1}`}
+                        loading="lazy"
+                        className="aspect-square w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </Block>
+          )}
 
           <Block title="Status">
             <div className="flex flex-wrap gap-2">
