@@ -1178,7 +1178,6 @@ const PedidoDetail = ({
             </div>
           </Block>
 
-          <Block title="Status">
           {inspiracoesCount > 0 && (
             <Block title={`Fotos de inspiração (${inspiracoesCount})`}>
               {inspiracoesLoading ? (
@@ -1208,7 +1207,7 @@ const PedidoDetail = ({
             </Block>
           )}
 
-          <div style={{ display: "none" }}>
+          <Block title="Status">
             <div className="flex flex-wrap gap-2">
               {(["novo", "em_orcamento", "finalizado"] as const).map((s) => (
                 <button
