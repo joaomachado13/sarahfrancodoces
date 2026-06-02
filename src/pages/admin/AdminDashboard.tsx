@@ -708,7 +708,20 @@ const AdminDashboard = () => {
                                       <p className="mt-1 text-xs text-petrol/50">{pedido.telefone}</p>
                                     </div>
                                   </div>
-                                  <GripVertical size={15} className="mt-1 shrink-0 text-petrol/25 transition-colors group-hover:text-burgundy/60" />
+                                  <div className="flex shrink-0 items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        deletePedido(pedido);
+                                      }}
+                                      aria-label={`Excluir pedido de ${pedido.nome_cliente}`}
+                                      className="rounded-lg p-1.5 text-petrol/30 transition-colors hover:bg-burgundy/10 hover:text-burgundy"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                    <GripVertical size={15} className="mt-1 text-petrol/25 transition-colors group-hover:text-burgundy/60" />
+                                  </div>
                                 </div>
 
                                 <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-petrol/70">{resumoPedido(pedido)}</p>
