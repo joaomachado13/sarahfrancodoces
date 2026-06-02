@@ -129,6 +129,8 @@ const Pedido = () => {
   });
   const [itens, setItens] = useState<OrderItem[]>([newDoce()]);
   const [inspiracoes, setInspiracoes] = useState<string[]>([]);
+  const [inspiracoesPreview, setInspiracoesPreview] = useState<string[]>([]);
+  const pedidoIdRef = useRef<string>(crypto.randomUUID());
 
   const updateItem = (id: string, patch: Partial<OrderItem>) => {
     setItens((prev) =>
@@ -211,7 +213,7 @@ const Pedido = () => {
   const [enviando, setEnviando] = useState(false);
 
   const submit = async () => {
-    const pedidoId = crypto.randomUUID();
+    const pedidoId = pedidoIdRef.current;
     const payload = {
       nome_cliente: cliente.nome,
       telefone: cliente.telefone,
@@ -385,6 +387,9 @@ const Pedido = () => {
                 logistica={logistica}
                 itens={itens}
                 inspiracoes={inspiracoes}
+                inspiracoesPreview={inspiracoesPreview}
+                setInspiracoesPreview={setInspiracoesPreview}
+                pedidoId={pedidoIdRef.current}
                 setInspiracoes={setInspiracoes}
               />
             )}
@@ -849,6 +854,9 @@ const StepReview = ({
   itens,
   inspiracoes,
   setInspiracoes,
+  inspiracoesPreview,
+  setInspiracoesPreview,
+  pedidoId,
 }: {
   cliente: CustomerData;
   evento: EventData;
@@ -856,6 +864,9 @@ const StepReview = ({
   itens: OrderItem[];
   inspiracoes: string[];
   setInspiracoes: React.Dispatch<React.SetStateAction<string[]>>;
+  inspiracoesPreview: string[];
+  setInspiracoesPreview: React.Dispatch<React.SetStateAction<string[]>>;
+  pedidoId: string;
 }) => (
   <div className="space-y-8">
     <SectionTitle
@@ -908,7 +919,13 @@ const StepReview = ({
       </ul>
     </ReviewBlock>
     <ReviewBlock title="Inspirações (opcional)">
-      <InspiracoesUploader urls={inspiracoes} setUrls={setInspiracoes} />
+      <InspiracoesUploader
+        urls={inspiracoes}
+        setUrls={setInspiracoes}
+        previews={inspiracoesPreview}
+        setPreviews={setInspiracoesPreview}
+        pedidoId={pedidoId}
+      />
     </ReviewBlock>
   </div>
 );
@@ -1067,9 +1084,15 @@ const PickerButton = ({
 const InspiracoesUploader = ({
   urls,
   setUrls,
+  previews,
+  setPreviews,
+  pedidoId,
 }: {
   urls: string[];
   setUrls: React.Dispatch<React.SetStateAction<string[]>>;
+  previews: string[];
+  setPreviews: React.Dispatch<React.SetStateAction<string[]>>;
+  pedidoId: string;
 }) => {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -1085,6 +1108,7 @@ const InspiracoesUploader = ({
     setUploading(true);
     try {
       const uploaded: string[] = [];
+      const newPreviews: string[] = [];
       for (const file of toUpload) {
         if (!file.type.startsWith("image/")) {
           toast.error(`"${file.name}" não é uma imagem.`);
@@ -1094,8 +1118,9 @@ const InspiracoesUploader = ({
           toast.error(`"${file.name}" passa de 8MB.`);
           continue;
         }
-        const ext = file.name.split(".").pop() || "jpg";
-        const path = `incoming/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const idx = urls.length + uploaded.length + 1;
+        const path = `pedidos/${pedidoId}/foto-${idx}-${Date.now()}.${ext}`;
         const { error } = await supabase.storage
           .from("pedido-inspiracoes")
           .upload(path, file, { contentType: file.type, upsert: false });
@@ -1104,11 +1129,13 @@ const InspiracoesUploader = ({
           toast.error(`Falha ao enviar "${file.name}".`);
           continue;
         }
-        // Bucket é privado — armazenamos apenas o path; admins geram signed URLs.
+        // Bucket é privado — armazenamos o path; admin gera signed URL.
         uploaded.push(path);
+        newPreviews.push(URL.createObjectURL(file));
       }
       if (uploaded.length) {
         setUrls((prev) => [...prev, ...uploaded]);
+        setPreviews((prev) => [...prev, ...newPreviews]);
         toast.success(`${uploaded.length} foto(s) enviada(s).`);
       }
     } finally {
@@ -1149,10 +1176,19 @@ const InspiracoesUploader = ({
               key={u}
               className="group relative aspect-square overflow-hidden rounded-lg border border-burgundy/20"
             >
-              <img src={u} alt={`Inspiração ${i + 1}`} className="h-full w-full object-cover" />
+              {previews[i] ? (
+                <img src={previews[i]} alt={`Inspiração ${i + 1}`} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-burgundy/5 text-[0.6rem] uppercase tracking-[0.2em] text-burgundy">
+                  enviada
+                </div>
+              )}
               <button
                 type="button"
-                onClick={() => setUrls((prev) => prev.filter((x) => x !== u))}
+                onClick={() => {
+                  setUrls((prev) => prev.filter((x) => x !== u));
+                  setPreviews((prev) => prev.filter((_, idx) => idx !== i));
+                }}
                 className="absolute right-1 top-1 rounded-full bg-petrol/80 px-2 py-0.5 text-[0.6rem] text-cream opacity-0 transition-opacity group-hover:opacity-100"
               >
                 remover

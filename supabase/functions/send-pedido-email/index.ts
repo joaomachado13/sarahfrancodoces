@@ -1,7 +1,7 @@
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_mail/gmail/v1";
-const TO_EMAIL = "sarahalfr@hotmail.com";
+const TO_EMAIL = "sarahfrancodoces@gmail.com";
 const APP_BASE_URL = "https://sarahfrancodoces.lovable.app";
 
 interface DoceItem {
@@ -37,6 +37,7 @@ interface Payload {
   data_retirada: string | null;
   horario_retirada: string | null;
   itens: OrderItem[];
+  inspiracao_urls?: string[] | null;
 }
 
 const escape = (s: string) =>
@@ -125,6 +126,17 @@ Deno.serve(async (req) => {
       ? `<p style="margin:26px 0 0;"><a href="${detalhesUrl}" style="display:inline-block;background:#5a1f2b;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;">Abrir pedido e fazer orçamento</a></p>`
       : "";
 
+    const inspCount = Array.isArray(p.inspiracao_urls) ? p.inspiracao_urls.length : 0;
+    const inspHtml = inspCount > 0
+      ? `<h2 style="font-size:15px;color:#5a1f2b;margin:22px 0 8px;text-transform:uppercase;letter-spacing:.5px;">Imagens de referência</h2>
+         <div style="padding:12px 14px;background:#fff;border:1px solid #eadfd5;border-radius:10px;">
+           <strong>${inspCount}</strong> imagem(ns) anexada(s) pelo cliente.${detalhesUrl ? ` <a href="${detalhesUrl}" style="color:#5a1f2b;">Ver no painel</a>.` : ""}
+         </div>`
+      : "";
+    const inspText = inspCount > 0
+      ? `\n\nImagens de referência: ${inspCount} anexada(s). ${detalhesUrl ? `Ver: ${detalhesUrl}` : ""}`
+      : "";
+
     const html = `<!doctype html>
 <html><body style="margin:0;padding:0;background:#faf6f1;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;">
   <div style="max-width:620px;margin:0 auto;padding:28px 22px;">
@@ -152,6 +164,7 @@ Deno.serve(async (req) => {
     <h2 style="font-size:15px;color:#5a1f2b;margin:22px 0 8px;text-transform:uppercase;letter-spacing:.5px;">Pedido</h2>
     <ul style="list-style:none;padding:0;margin:0;">${itensHtml}</ul>
 
+    ${inspHtml}
     ${linkHtml}
     <p style="margin:18px 0 0;color:#6b5a52;font-size:14px;">Acesse o sistema para criar o orçamento.</p>
   </div>
@@ -173,7 +186,7 @@ Logística:
 
 Pedido:
 ${itensText}
-
+${inspText}
 ${detalhesUrl ? `\n\nVer pedido completo: ${detalhesUrl}` : ""}
 
 Acesse o sistema para criar o orçamento.`;

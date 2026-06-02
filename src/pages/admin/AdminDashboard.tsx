@@ -1009,6 +1009,7 @@ const PedidoDetail = ({
   );
   const [inspiracoes, setInspiracoes] = useState<string[]>([]);
   const [inspiracoesLoading, setInspiracoesLoading] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -1179,7 +1180,7 @@ const PedidoDetail = ({
           </Block>
 
           {inspiracoesCount > 0 && (
-            <Block title={`Fotos de inspiração (${inspiracoesCount})`}>
+            <Block title={`Imagens de referência (${inspiracoesCount})`}>
               {inspiracoesLoading ? (
                 <p className="text-xs text-petrol/60">Carregando imagens…</p>
               ) : inspiracoes.length === 0 ? (
@@ -1187,11 +1188,10 @@ const PedidoDetail = ({
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {inspiracoes.map((url, idx) => (
-                    <a
+                    <button
                       key={idx}
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
+                      type="button"
+                      onClick={() => setLightboxIdx(idx)}
                       className="group relative block overflow-hidden rounded-lg border border-burgundy/15 bg-background"
                     >
                       <img
@@ -1200,11 +1200,56 @@ const PedidoDetail = ({
                         loading="lazy"
                         className="aspect-square w-full object-cover transition-transform group-hover:scale-105"
                       />
-                    </a>
+                    </button>
                   ))}
                 </div>
               )}
             </Block>
+          )}
+
+          {lightboxIdx !== null && inspiracoes[lightboxIdx] && (
+            <div
+              className="fixed inset-0 z-[60] flex items-center justify-center bg-petrol/90 p-4"
+              onClick={() => setLightboxIdx(null)}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIdx((i) => (i === null ? null : Math.max(0, i - 1)));
+                }}
+                disabled={lightboxIdx === 0}
+                className="absolute left-4 rounded-full bg-cream/20 px-4 py-2 text-cream hover:bg-cream/30 disabled:opacity-30"
+              >
+                ‹
+              </button>
+              <img
+                src={inspiracoes[lightboxIdx]}
+                alt={`Inspiração ${lightboxIdx + 1}`}
+                className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIdx((i) =>
+                    i === null ? null : Math.min(inspiracoes.length - 1, i + 1),
+                  );
+                }}
+                disabled={lightboxIdx === inspiracoes.length - 1}
+                className="absolute right-4 rounded-full bg-cream/20 px-4 py-2 text-cream hover:bg-cream/30 disabled:opacity-30"
+              >
+                ›
+              </button>
+              <button
+                type="button"
+                onClick={() => setLightboxIdx(null)}
+                className="absolute right-4 top-4 rounded-full bg-cream/20 px-3 py-1 text-xs uppercase tracking-[0.2em] text-cream hover:bg-cream/30"
+              >
+                fechar ✕
+              </button>
+            </div>
           )}
 
           <Block title="Status">
