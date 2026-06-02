@@ -60,6 +60,21 @@ type PricedOrderItem = OrderItem & { valor?: number | null };
 
 const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "desconhecido";
 
+const INSPIRACOES_BUCKET = "pedido-inspiracoes";
+
+const getInspiracaoPath = (entry: string) => {
+  const clean = entry.trim();
+  if (!clean) return "";
+  const bucketMarker = `/${INSPIRACOES_BUCKET}/`;
+  if (/^https?:\/\//i.test(clean) && clean.includes(bucketMarker)) {
+    return decodeURIComponent(clean.split(bucketMarker)[1]?.split("?")[0] || "");
+  }
+  if (clean.startsWith(`${INSPIRACOES_BUCKET}/`)) {
+    return clean.slice(INSPIRACOES_BUCKET.length + 1);
+  }
+  return /^https?:\/\//i.test(clean) ? "" : clean.replace(/^\/+/, "");
+};
+
 const ADMIN_START_DATE = "2026-05-01";
 const ADMIN_START_AT = new Date(`${ADMIN_START_DATE}T00:00:00`).getTime();
 
@@ -437,7 +452,7 @@ const AdminDashboard = () => {
   const deletePedido = async (pedido: PedidoRow) => {
     const ok = window.confirm(`Excluir o pedido de ${pedido.nome_cliente}? Essa ação não pode ser desfeita.`);
     if (!ok) return;
-    const imagens = (pedido.inspiracao_urls || []).filter((url) => url && !/^https?:\/\//i.test(url));
+    const imagens = (pedido.inspiracao_urls || []).map(getInspiracaoPath).filter(Boolean);
     const { error } = await supabase.from("pedidos").delete().eq("id", pedido.id);
     if (error) {
       toast.error("Erro ao excluir pedido: " + error.message);
@@ -445,8 +460,8 @@ const AdminDashboard = () => {
     }
     if (imagens.length > 0) {
       supabase.storage
-        .from("pedido-inspiracoes")
-        .remove(imagens.map((url) => url.replace(/^\/+/, "")))
+        .from(INSPIRACOES_BUCKET)
+        .remove(imagens)
         .then(({ error: storageError }) => {
           if (storageError) console.error("Falha ao remover imagens do pedido:", storageError);
         });
