@@ -18,6 +18,7 @@ type PedidoPdf = {
   valor_total: number | null;
   observacoes_admin: string | null;
   created_at: string;
+  inspiracao_urls?: string[] | null;
 };
 
 // Paleta (HSL convertida para RGB aproximado, alinhada ao tema)
@@ -274,6 +275,20 @@ export const generatePedidoPdf = (pedido: PedidoPdf) => {
     doc.setFontSize(10);
     setColor(PETROL);
     const lines = doc.splitTextToSize(pedido.observacoes_admin, contentW);
+    ensureSpace(lines.length * 14 + 10);
+    doc.text(lines, margin, y);
+    y += lines.length * 14 + 10;
+  }
+
+  // ===== Referências visuais =====
+  const inspCount = Array.isArray(pedido.inspiracao_urls) ? pedido.inspiracao_urls.length : 0;
+  if (inspCount > 0) {
+    sectionTitle("Referências visuais");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    setColor(PETROL);
+    const msg = `${inspCount} imagem(ns) de referência anexada(s) pelo cliente. Disponíveis no painel administrativo do pedido.`;
+    const lines = doc.splitTextToSize(msg, contentW);
     ensureSpace(lines.length * 14 + 10);
     doc.text(lines, margin, y);
     y += lines.length * 14 + 10;
