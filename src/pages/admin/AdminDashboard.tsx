@@ -53,6 +53,7 @@ export type PedidoRow = {
   valor_total: number | null;
   observacoes_admin: string | null;
   created_at: string;
+  inspiracao_urls?: string[] | null;
 };
 
 type PricedOrderItem = OrderItem & { valor?: number | null };
@@ -436,10 +437,19 @@ const AdminDashboard = () => {
   const deletePedido = async (pedido: PedidoRow) => {
     const ok = window.confirm(`Excluir o pedido de ${pedido.nome_cliente}? Essa ação não pode ser desfeita.`);
     if (!ok) return;
+    const imagens = (pedido.inspiracao_urls || []).filter((url) => url && !/^https?:\/\//i.test(url));
     const { error } = await supabase.from("pedidos").delete().eq("id", pedido.id);
     if (error) {
       toast.error("Erro ao excluir pedido: " + error.message);
       return;
+    }
+    if (imagens.length > 0) {
+      supabase.storage
+        .from("pedido-inspiracoes")
+        .remove(imagens.map((url) => url.replace(/^\/+/, "")))
+        .then(({ error: storageError }) => {
+          if (storageError) console.error("Falha ao remover imagens do pedido:", storageError);
+        });
     }
     toast.success("Pedido excluído");
     setPedidos((prev) => prev.filter((p) => p.id !== pedido.id));
