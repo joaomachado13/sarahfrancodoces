@@ -854,6 +854,9 @@ const StepReview = ({
   itens,
   inspiracoes,
   setInspiracoes,
+  inspiracoesPreview,
+  setInspiracoesPreview,
+  pedidoId,
 }: {
   cliente: CustomerData;
   evento: EventData;
@@ -861,6 +864,9 @@ const StepReview = ({
   itens: OrderItem[];
   inspiracoes: string[];
   setInspiracoes: React.Dispatch<React.SetStateAction<string[]>>;
+  inspiracoesPreview: string[];
+  setInspiracoesPreview: React.Dispatch<React.SetStateAction<string[]>>;
+  pedidoId: string;
 }) => (
   <div className="space-y-8">
     <SectionTitle
@@ -913,7 +919,13 @@ const StepReview = ({
       </ul>
     </ReviewBlock>
     <ReviewBlock title="Inspirações (opcional)">
-      <InspiracoesUploader urls={inspiracoes} setUrls={setInspiracoes} />
+      <InspiracoesUploader
+        urls={inspiracoes}
+        setUrls={setInspiracoes}
+        previews={inspiracoesPreview}
+        setPreviews={setInspiracoesPreview}
+        pedidoId={pedidoId}
+      />
     </ReviewBlock>
   </div>
 );
