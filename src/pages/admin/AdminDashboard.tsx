@@ -1061,16 +1061,14 @@ const PedidoDetail = ({
       const resolved: string[] = [];
       for (const entry of urls) {
         if (!entry) continue;
-        // Pedidos antigos podem ter URL pública completa
-        if (/^https?:\/\//i.test(entry)) {
+        const path = getInspiracaoPath(entry);
+        if (!path) {
           resolved.push(entry);
           continue;
         }
-        // Caminho dentro do bucket privado → gerar URL assinada
-        const path = entry.replace(/^\/+/, "");
         const { data, error } = await supabase
           .storage
-          .from("pedido-inspiracoes")
+          .from(INSPIRACOES_BUCKET)
           .createSignedUrl(path, 60 * 60);
         if (!error && data?.signedUrl) resolved.push(data.signedUrl);
       }
