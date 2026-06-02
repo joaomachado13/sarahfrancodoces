@@ -129,6 +129,8 @@ const Pedido = () => {
   });
   const [itens, setItens] = useState<OrderItem[]>([newDoce()]);
   const [inspiracoes, setInspiracoes] = useState<string[]>([]);
+  const [inspiracoesPreview, setInspiracoesPreview] = useState<string[]>([]);
+  const pedidoIdRef = useRef<string>(crypto.randomUUID());
 
   const updateItem = (id: string, patch: Partial<OrderItem>) => {
     setItens((prev) =>
@@ -211,7 +213,7 @@ const Pedido = () => {
   const [enviando, setEnviando] = useState(false);
 
   const submit = async () => {
-    const pedidoId = crypto.randomUUID();
+    const pedidoId = pedidoIdRef.current;
     const payload = {
       nome_cliente: cliente.nome,
       telefone: cliente.telefone,
@@ -385,6 +387,9 @@ const Pedido = () => {
                 logistica={logistica}
                 itens={itens}
                 inspiracoes={inspiracoes}
+                inspiracoesPreview={inspiracoesPreview}
+                setInspiracoesPreview={setInspiracoesPreview}
+                pedidoId={pedidoIdRef.current}
                 setInspiracoes={setInspiracoes}
               />
             )}
