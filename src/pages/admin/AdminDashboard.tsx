@@ -53,11 +53,27 @@ export type PedidoRow = {
   valor_total: number | null;
   observacoes_admin: string | null;
   created_at: string;
+  inspiracao_urls?: string[] | null;
 };
 
 type PricedOrderItem = OrderItem & { valor?: number | null };
 
 const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "desconhecido";
+
+const INSPIRACOES_BUCKET = "pedido-inspiracoes";
+
+const getInspiracaoPath = (entry: string) => {
+  const clean = entry.trim();
+  if (!clean) return "";
+  const bucketMarker = `/${INSPIRACOES_BUCKET}/`;
+  if (/^https?:\/\//i.test(clean) && clean.includes(bucketMarker)) {
+    return decodeURIComponent(clean.split(bucketMarker)[1]?.split("?")[0] || "");
+  }
+  if (clean.startsWith(`${INSPIRACOES_BUCKET}/`)) {
+    return clean.slice(INSPIRACOES_BUCKET.length + 1);
+  }
+  return /^https?:\/\//i.test(clean) ? "" : clean.replace(/^\/+/, "");
+};
 
 const ADMIN_START_DATE = "2026-05-01";
 const ADMIN_START_AT = new Date(`${ADMIN_START_DATE}T00:00:00`).getTime();
@@ -436,10 +452,19 @@ const AdminDashboard = () => {
   const deletePedido = async (pedido: PedidoRow) => {
     const ok = window.confirm(`Excluir o pedido de ${pedido.nome_cliente}? Essa ação não pode ser desfeita.`);
     if (!ok) return;
+    const imagens = (pedido.inspiracao_urls || []).map(getInspiracaoPath).filter(Boolean);
     const { error } = await supabase.from("pedidos").delete().eq("id", pedido.id);
     if (error) {
       toast.error("Erro ao excluir pedido: " + error.message);
       return;
+    }
+    if (imagens.length > 0) {
+      supabase.storage
+        .from(INSPIRACOES_BUCKET)
+        .remove(imagens)
+        .then(({ error: storageError }) => {
+          if (storageError) console.error("Falha ao remover imagens do pedido:", storageError);
+        });
     }
     toast.success("Pedido excluído");
     setPedidos((prev) => prev.filter((p) => p.id !== pedido.id));
@@ -698,7 +723,20 @@ const AdminDashboard = () => {
                                       <p className="mt-1 text-xs text-petrol/50">{pedido.telefone}</p>
                                     </div>
                                   </div>
-                                  <GripVertical size={15} className="mt-1 shrink-0 text-petrol/25 transition-colors group-hover:text-burgundy/60" />
+                                  <div className="flex shrink-0 items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        deletePedido(pedido);
+                                      }}
+                                      aria-label={`Excluir pedido de ${pedido.nome_cliente}`}
+                                      className="rounded-lg p-1.5 text-petrol/30 transition-colors hover:bg-burgundy/10 hover:text-burgundy"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                    <GripVertical size={15} className="mt-1 text-petrol/25 transition-colors group-hover:text-burgundy/60" />
+                                  </div>
                                 </div>
 
                                 <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-petrol/70">{resumoPedido(pedido)}</p>
@@ -1023,16 +1061,14 @@ const PedidoDetail = ({
       const resolved: string[] = [];
       for (const entry of urls) {
         if (!entry) continue;
-        // Pedidos antigos podem ter URL pública completa
-        if (/^https?:\/\//i.test(entry)) {
+        const path = getInspiracaoPath(entry);
+        if (!path) {
           resolved.push(entry);
           continue;
         }
-        // Caminho dentro do bucket privado → gerar URL assinada
-        const path = entry.replace(/^\/+/, "");
         const { data, error } = await supabase
           .storage
-          .from("pedido-inspiracoes")
+          .from(INSPIRACOES_BUCKET)
           .createSignedUrl(path, 60 * 60);
         if (!error && data?.signedUrl) resolved.push(data.signedUrl);
       }
